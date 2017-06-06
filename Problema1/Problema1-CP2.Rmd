@@ -1,0 +1,101 @@
+---
+title: "Análise de séries"
+author: "Rayssa"
+date: "5 de junho de 2017"
+output: html_document
+---
+
+```{r}
+library("ggplot2")
+library("dplyr")
+library("tidyr")
+library("readr")
+```
+
+
+#Descrição dos dados
+
+Os dados utilizados neste relatório são oriundos da avaliação de séries feita no IMDB. Nestes dados são inclusos as seguintes variáveis: nome da série, os episódios das séries, as temporadas, a avaliação dos usuários (denominada UserRating), a quantidade de usuários que votaram (denominada UserVotes) e a distribuição das notas de r1 a r10, r1 corresponde a pior avaliação enquanto r10 a melhor avaliação. Neste relatório pretendemos responder as perguntas a seguir:
+
+#Perguntas
+
+**A série que possui maior quantidade de ocorrências do índice r10 é a série melhor avaliada no IMDB?**
+
+```{r}
+dados <- read_csv("../dados/series_from_imdb.csv")
+series_r10 <- dados %>% 
+    group_by(series_name) %>% 
+    summarise(mediana = median(r10), media = mean(r10))
+
+maior_mediana_r10 <- max(series_r10[,2])
+maior_media_r10 <- max(series_r10[,3])
+
+series_r10 %>% 
+  filter(mediana == maior_mediana_r10 | media == maior_media_r10)
+```
+
+
+A partir do resultado acima podemos afirmar que a série ‘Sense8’ possui a maior média e mediana, portanto ela é a que mais recebeu avaliações positivas. Agora pretendemos responder a segunda parte da pergunta acima: ‘é a série melhor avaliada no IMDB?’. Para isto
+
+  
+```{r}
+ggplot(dados %>%  filter(series_name=="Sense8"), mapping = aes(x = series_ep, y= UserRating)) +
+    geom_point(colour="blue") +
+    geom_line(colour="green")
+
+```
+
+Podemos perceber pelo gráfico acima que houve variações nas notas, isso pode influenciar na avaliação geral.Para isso iremos verificar as séries que possuem uma média e mediana maior que 9 para verificar de a série ‘Sense8’ é realmente a melhor avaliada.
+
+```{r}
+series_media_alta <- dados %>% 
+  group_by(series_name) %>% 
+  summarise(mediana = median(UserRating), media = mean(UserRating)) %>% 
+  filter(media > 9 | mediana >= 9)
+
+series_media_alta %>% 
+  arrange(media)
+```
+
+De acordo com a tabela acima podemos observar que a série ‘Sense8’ com maior indice (r10) é uma das melhores avaliadas, porém não é a melhor avaliada. A série melhor avaliada pelo IMDB é a ‘Sherlock’.
+
+**Qual a série que possui média e mediana mais alta durante a primeira temporada dentre The 100, Black Mirror, Friends?**
+
+Pensando em saber qual destas três séries mencionadas acima começar a assistir, pretendemos saber qual a opinião dos usuários que assistiram a primeira temporada de cada uma delas. Com este propósito geramos a tabela abaixo com a média e mediana de cada.
+
+```{r}
+dados %>% 
+  filter(series_name %in% c("The 100", "Black Mirror", "Friends"), season == 1) %>% 
+  group_by(series_name) %>% 
+  summarise(media = mean(UserRating), mediana = median(UserRating))
+```
+
+Para uma melhor visualização e análise iremos mostrar o gráfico abaixo:
+
+```{r}
+ggplot(data = dados %>% filter(series_name %in% c("The 100", "Black Mirror", "Friends"), season == 1), aes(x = series_name, y = UserRating)) + 
+  geom_boxplot(outlier.shape = NA) +
+  geom_jitter(aes(color = series_name)) 
+
+```
+
+
+Podemos perceber que a que possui maior média e mediana é a série Friends, portanto para quem pretende começar a assistir alguma delas, podem começar com ‘Friends’ que provavelmente irá gostar.
+
+##Perguntas feitas a partir dos resultados encontrados
+
+**Qual a série que possui média e mediana mais alta dentre todas as séries durante a primeira temporada? Isso para quem ainda não assistiu nenhuma série**
+
+Para aquela pessoa que não assistiu nenhuma série e pretende saber o que a maioria das pessoas gostam e estam avaliando melhor, utilizamos como métrica a média e mediana de cada série. A mediana é o valor central das avaliações, na qual separa ao meio os maiores valores dos menores.
+
+```{r}
+series_media <- dados %>% 
+  group_by(series_name) %>% 
+  summarise(media = mean(UserRating), mediana = median(UserRating)) 
+
+series_media %>% 
+   arrange(-mediana)
+```
+
+
+De acordo com a tabela acima podemos perceber que dentre todas as séries avaliadas no IMDB os usuários melhor avaliaram a série ‘Sense8’, com mediana 9 e média 8.89 aproximadamente.
