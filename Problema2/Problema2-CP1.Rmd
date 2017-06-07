@@ -14,47 +14,52 @@ library("plotly")
 library("DT")
 ```
 
-Procurando saber se a série que possui maior quantidade de ocorrências do 
+##Vamos fazer uma análise sobre séries?
 
-#Descrição dos dados
+Será que...
+  a série que mais recebeu avaliações positivas é a série melhor avaliada no IMDB (Base de Dados de Filmes da Internet)??
 
-  Os dados utilizados neste relatório são oriundos da avaliação de séries feita no IMDB. Nestes dados são inclusos as seguintes variáveis: nome da série, os episódios das séries, as temporadas, a avaliação dos usuários (denominada UserRating), a quantidade de usuários que votaram (denominada UserVotes) e a distribuição das notas de r1 a r10, r1 corresponde a pior avaliação enquanto r10 a melhor avaliação. 
-  Visando responder a essa pergunta: *A série que possui maior quantidade de ocorrências do índice r10 é a série melhor avaliada no IMDB?*. Iremos mostrar os resultados através de gráficos para seu melhor entendimento.
-  Primeiro precisamos saber qual dentre as séries possui a maior quantidade de ocorrências do índice r10 (melhor avaliação), pelo resultado da tabela abaixo 
+
+  Primeiro precisamos saber qual dentre as séries possui a maior quantidade de avaliações positivas, na tabela abaixo utilizamos a mediana e a média como métrica de comparação, a série que possui o maior valor tanto de média e mediana está no topo da tabela, portanto, é a '*Sense8*.
   
-```{r, message=FALSE, warning=FALSE}
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
 dados <- read_csv("../dados/series_from_imdb.csv")
 series_r10 <- dados %>% 
-    group_by(series_name) %>% 
+    group_by(nome_serie = series_name) %>% 
     summarise(mediana = median(r10), media = mean(r10))
 
 maior_mediana_r10 <- max(series_r10[,2])
 maior_media_r10 <- max(series_r10[,3])
 
 dados_table <- series_r10 %>% 
-  filter(mediana == maior_mediana_r10 | media == maior_media_r10)
+  arrange(-mediana)
 
 datatable(dados_table)
 ```
 
 
-A partir do resultado acima podemos afirmar que a série ‘Sense8’ possui a maior média e mediana, portanto ela é a que mais recebeu avaliações positivas. Agora pretendemos responder a segunda parte da pergunta acima: ‘é a série melhor avaliada no IMDB?’. Para isto
+Agora pretendemos responder a segunda parte da pergunta acima: *‘é a série melhor avaliada no IMDB?’*. Para isto vamos verificar se houve variação entre as notas dadas pelos usuários para *Sense8*.
 
-```{r, message=FALSE, warning=FALSE, fig.height=2, fig.width=4}
-graphic = ggplot(dados %>%  filter(series_name=="Sense8"), mapping = aes(x = series_ep, y= UserRating)) +
-    geom_line(colour="green") +
-    geom_point(aes(text = paste("Episódio:", series_ep, "<br>", "Classificação:", UserRating)),
-               colour="black") + 
-    labs(title = "Avaliação dos usuários por episódio da série 'Sense8'", x = "Episódios", y = "Notas dos usuários")
-ggplotly(graphic)
 
+```{r, echo=FALSE, message=FALSE, warning=FALSE, fig.height=2, fig.width=4}
+plot = dados %>%  
+  filter(series_name=="Sense8") %>%
+  ggplot(aes(x = series_ep, y = UserRating)) + 
+  geom_line() + 
+  geom_point(aes(text = paste("Episódio:", series_ep, "<br>", "Avaliação:", UserRating)), 
+             color = "purple") +
+  labs(title = "Avaliação dos usuários por episódio da série 'Sense8'", x = "Episódios", y = "Avaliações dos usuários")
+
+ggplotly(plot, tooltip = "text")
 ```
 
-Podemos perceber pelo gráfico acima que houve variações nas notas, isso pode influenciar na avaliação geral.Para isso iremos verificar as séries que possuem uma média e mediana maior que 9 para verificar se a série ‘Sense8’ é realmente a melhor avaliada.
 
-```{r, message=FALSE, warning=FALSE}
+Podemos perceber que houve variações nas notas, isso pode influenciar na avaliação geral da série, então precisamos saber de outra forma se a série ‘Sense8’ é realmente a melhor avaliada. 
+
+
+```{r, echo=FALSE, message=FALSE, warning=FALSE, fig.height=2, fig.width=4}
 series_media_alta <- dados %>% 
-  group_by(series_name) %>% 
+  group_by(nome_serie = series_name) %>% 
   summarise(mediana = median(UserRating), media = mean(UserRating)) %>% 
   filter(media > 9 | mediana >= 9)
 
@@ -64,4 +69,4 @@ dados_table <- series_media_alta %>%
 datatable(dados_table)
 ```
 
-De acordo com a tabela acima podemos observar que a série ‘Sense8’ com maior indice (r10) é uma das melhores avaliadas, porém não é a melhor avaliada. A série melhor avaliada pelo IMDB é a ‘Sherlock’.
+De acordo com a tabela acima, que contém as séries com média e mediana mais altas, podemos observar que a série ‘Sense8’ com maior quantidade de avaliações positivas é uma das melhores avaliadas, porém não é a melhor avaliada. A série melhor avaliada pelo IMDB é a ‘Sherlock’.
