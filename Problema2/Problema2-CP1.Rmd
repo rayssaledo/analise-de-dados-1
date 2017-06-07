@@ -1,5 +1,6 @@
 ---
 title: "Análise entre séries"
+author: "Rayssa"
 date: "5 de junho de 2017"
 output: html_document
 ---
@@ -19,7 +20,7 @@ Será que...
   a série que mais recebeu avaliações positivas é a série melhor avaliada no IMDB (Base de Dados de Filmes da Internet)??
 
 
-  Primeiro precisamos saber qual dentre as séries possui a maior quantidade de avaliações positivas, na tabela abaixo utilizamos a mediana e a média como métrica de comparação, a série que possui o maior valor tanto de média e mediana está no topo da tabela, portanto, é a '*Sense8*.
+  Primeiro precisamos saber qual dentre as séries possui a maior quantidade de avaliações positivas, na tabela abaixo utilizamos a mediana e a média (referentes a quantidade de avaliações positivas) como métrica de comparação, a série que possui o maior valor tanto de média e mediana está no topo da tabela, portanto, é a '*Sense8*.
   
 ```{r, echo=FALSE, message=FALSE, warning=FALSE}
 dados <- read_csv("../dados/series_from_imdb.csv")
@@ -53,7 +54,7 @@ ggplotly(plot, tooltip = "text")
 ```
 
 
-Podemos perceber que houve variações nas notas, isso pode influenciar na avaliação geral da série, então precisamos saber de outra forma se a série ‘Sense8’ é realmente a melhor avaliada. 
+Podemos perceber que houve uma grande variação nas notas, isso pode influenciar na avaliação geral da série, então precisamos saber de outra forma se a série ‘Sense8’ é realmente a melhor avaliada. 
 
 
 ```{r, echo=FALSE, message=FALSE, warning=FALSE, fig.height=2, fig.width=4}
@@ -68,4 +69,4 @@ dados_table <- series_media_alta %>%
 datatable(dados_table)
 ```
 
-De acordo com a tabela acima, que contém as séries com média e mediana mais altas, podemos observar que a série ‘Sense8’ com maior quantidade de avaliações positivas é uma das melhores avaliadas, porém não é a melhor avaliada. A série melhor avaliada pelo IMDB é a ‘Sherlock’.
+De acordo com a tabela acima, que contém as séries com média e mediana (referentes a avaliação dos usuários) mais altas, podemos observar que a série ‘Sense8’ com maior quantidade de avaliações positivas é uma das melhores avaliadas, porém não é a melhor avaliada. A série melhor avaliada pelo IMDB é a ‘Sherlock’.
