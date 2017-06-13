@@ -53,13 +53,21 @@ shinyServer(function(input, output) {
     } else if (input$series == '') {
       dados %>%
         ggplot(aes(x = UserRating)) + 
-        geom_histogram(binwidth = .5, fill = "pink", color = "black") + 
+        geom_histogram(binwidth = .5, fill = "orange", color = "black") + 
         geom_rug() +
         labs(title = "Avaliação dos usuários por episódio da série: ", x = "Episódios", y = "Avaliações dos usuários") %>% return()
     }
   
   })
-
+  
+  output$distPlot3 <- renderPlotly({
+  dados %>%   
+    ggplot(aes(x = as.character(season), y = UserRating)) + 
+    geom_boxplot(outlier.color = NA) +   
+    geom_jitter(width = .1, size = .5, alpha = .5, color = "red")+
+    labs(title = "Box-plot da classificacao do usuario por temporada da serie", x="Temporada", y="Classificacao do usuario")
+  })
+  
 })
 
 
