@@ -8,18 +8,35 @@
 #
 
 library(shiny)
-library("dplyr")
-library("tidyr")
-library("ggplot2")
-library("readr")
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+library(readr)
 library(plotly)
 
 
-dados = read_csv("../../dados/series_from_imdb.csv")
+dados = read_csv("series_from_imdb.csv")
 
 
 # Define server logic required to draw a histogram
 shinyServer(function(input, output) {
+  
+  # dados <- dados %>% select(series_name) %>%  distinct()
+  series_r10 <- dados %>% 
+    group_by(nome_serie = series_name) %>% 
+    summarise(mediana = median(r10), media = mean(r10))
+  
+  maior_mediana_r10 <- max(series_r10[,2])
+  maior_media_r10 <- max(series_r10[,3])
+  
+  dados_table <- series_r10 %>% 
+    arrange(-mediana)
+  
+  # Show the first "n" observations
+  output$view <- renderTable({
+    head(dados_table, n = input$obs)
+  })
+  
   
   output$distPlot <- renderPlotly({
     
@@ -45,10 +62,9 @@ shinyServer(function(input, output) {
         geom_point(aes(text = paste("Episódio:", series_ep, "<br>", "Classificação:", UserRating)),
                    color = "orange",
                    size = 2) +
-        scale_x_continuous(breaks=seq(1, 25, 5))+
         facet_wrap(~series_name, scales = "free_x") +
         labs(title = "Avaliação dos usuários por episódio da série: ", x = "Episódios", y = "Avaliações dos usuários") %>% return()
-        
+      
       ggplotly(p, tooltip = "text")
     } else if (input$series == '') {
       dados %>%
@@ -58,14 +74,6 @@ shinyServer(function(input, output) {
         labs(title = "Avaliação dos usuários por episódio da série: ", x = "Episódios", y = "Avaliações dos usuários") %>% return()
     }
   
-  })
-  
-  output$distPlot3 <- renderPlotly({
-  dados %>%   
-    ggplot(aes(x = as.character(season), y = UserRating)) + 
-    geom_boxplot(outlier.color = NA) +   
-    geom_jitter(width = .1, size = .5, alpha = .5, color = "red")+
-    labs(title = "Box-plot da classificacao do usuario por temporada da serie", x="Temporada", y="Classificacao do usuario")
   })
   
 })
