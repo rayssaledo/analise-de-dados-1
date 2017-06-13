@@ -76,6 +76,18 @@ shinyServer(function(input, output) {
   
   })
   
+  output$table <- renderTable({
+    series_media_alta <- dados %>% 
+      group_by(nome_serie = series_name) %>% 
+      summarise(mediana = median(UserRating), media = mean(UserRating)) %>% 
+      filter(media > 9 | mediana >= 9)
+    
+    dados_table <- series_media_alta %>% 
+      arrange(media)
+    
+    head(dados_table)
+  })
+  
 })
 
 

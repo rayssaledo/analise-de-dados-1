@@ -29,7 +29,7 @@ shinyUI(fluidPage(
       br(),
     
       selectInput('series', "Escolha uma série para comparar com 'Sense8': ", 
-                  choices = list(Choose='', 
+                  choices = list("Escolha a série" = "", 
                                  "13 Reasons Why" = "13 Reasons Why",
                                  "Black Mirror" = "Black Mirror",
                                  "How to Get Away with Murder" = "How to Get Away with Murder",
@@ -71,15 +71,11 @@ shinyUI(fluidPage(
       ),
       br(),
       
-      # p("Veja na tabela abaixo as séries do momento, com suas respectivas média e mediana (referentes a quantidade de avaliações positivas feitas pelos usuários). As séries que possuem os maiores valores tanto de média e mediana estão entre as primeiras, quanto maior esses valores quer dizer que a série recebeu mais avaliações positivas. Portanto você pode verificar que a série que recebeu mais avaliações positivas foi a chamada",
-      #   em(strong('Sense8')),
-      #   '!!'
-      # ),
       p("Para responder essa pergunta é preciso saber da média e mediana referentes a quantidade de avaliações positivas feitas pelos usuários. Veja na tabela abaixo esses valores para cada série."),
       p("As séries que possuem os maiores valores tanto de média e mediana estão entre as primeiras, quanto maior esses valores quer dizer que a série recebeu mais avaliações positivas."),
       br(),
       
-      h4(strong("Tabela de série com respectiva média e mediana")),
+      h4(strong("Tabela de série com respectiva mediana e média")),
       tableOutput("view"),
       
       p("Caso queira verificar os valores das demais séries aumente o número de visualização de séries no primeiro campo ao lado."),
@@ -96,7 +92,12 @@ shinyUI(fluidPage(
       
       fluidRow(
         column(12,plotlyOutput("distPlot2"))
-      )
+      ),
+      
+      p("Como houve uma grande variação nas notas da série Sense8, é preciso saber de outra forma se esta série é realmente a melhor avaliada. Para isso você pode observar as séries com média e mediana (referentes a avaliação dos usuários) mais altas, essas séries podem ser visualizadas na tabela abaixo:"),
+      br(),
+      h5(strong("Tabela de série com respectiva mediana e média")),
+      tableOutput("table")
     )
   )
 ))
