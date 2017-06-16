@@ -8,33 +8,85 @@
 #
 
 library(shiny)
-library("dplyr")
-library("tidyr")
-library("ggplot2")
-library("readr")
+library(dplyr)
+library(tidyr)
+library(ggplot2)
+library(readr)
+library(plotly)
 
 
-dados = read_csv("../../dados/series_from_imdb.csv")
+dados = read_csv("series_from_imdb.csv")
+
 
 # Define server logic required to draw a histogram
 shinyServer(function(input, output) {
-   
-  # choose columns to display
-  series_name2 = dados %>% select(series_name) %>%  distinct()
-  series_name2[sample(nrow(dados %>% select(series_name)), 31), ]
-  output$mytable1 <- DT::renderDataTable({
-    DT::datatable(series_name2[, input$show_vars, drop = FALSE])
+  
+  # dados <- dados %>% select(series_name) %>%  distinct()
+  series_r10 <- dados %>% 
+    group_by(nome_serie = series_name) %>% 
+    summarise(mediana = median(r10), media = mean(r10))
+  
+  maior_mediana_r10 <- max(series_r10[,2])
+  maior_media_r10 <- max(series_r10[,3])
+  
+  dados_table <- series_r10 %>% 
+    arrange(-mediana)
+  
+  # Show the first "n" observations
+  output$view <- renderTable({
+    head(dados_table, n = input$obs)
   })
   
-  # # sorted columns are colored now because CSS are attached to them
-  # output$mytable2 <- DT::renderDataTable({
-  #   DT::datatable(mtcars, options = list(orderClasses = TRUE))
-  # })
-  # 
-  # # customize the length drop-down menu; display 5 rows per page by default
-  # output$mytable3 <- DT::renderDataTable({
-  #   DT::datatable(iris, options = list(lengthMenu = c(5, 30, 50), pageLength = 5))
-  # })
+  
+  output$distPlot <- renderPlotly({
+    
+    dados <- dados %>% filter(series_name == "Sense8")
+    
+    plot = dados %>%  
+            ggplot(aes(x = series_ep, y = UserRating)) +
+            geom_line() +
+            geom_point(aes(text = paste("Episódio:", series_ep, "<br>", "Avaliação:", UserRating)),
+                       color = "purple") +
+            labs(title = "Avaliação dos usuários por episódio da série 'Sense8'", x = "Episódios", y = "Avaliações dos usuários")
+
+          ggplotly(plot, tooltip = "text")
+  })
+  
+  output$distPlot2 <- renderPlotly({
+    dados <- dados %>% filter(series_name %in% input$series)
+  
+    if(input$series != '') {
+      p = dados %>%
+        ggplot(aes(x = series_ep, y = UserRating)) +
+        geom_line() +
+        geom_point(aes(text = paste("Episódio:", series_ep, "<br>", "Classificação:", UserRating)),
+                   color = "orange",
+                   size = 2) +
+        facet_wrap(~series_name, scales = "free_x") +
+        labs(title = "Avaliação dos usuários por episódio da série: ", x = "Episódios", y = "Avaliações dos usuários") %>% return()
+      
+      ggplotly(p, tooltip = "text")
+    } else if (input$series == '') {
+      dados %>%
+        ggplot(aes(x = UserRating)) + 
+        geom_histogram(binwidth = .5, fill = "orange", color = "black") + 
+        geom_rug() +
+        labs(title = "Avaliação dos usuários por episódio da série: ", x = "Episódios", y = "Avaliações dos usuários") %>% return()
+    }
+  
+  })
+  
+  output$table <- renderTable({
+    series_media_alta <- dados %>% 
+      group_by(nome_serie = series_name) %>% 
+      summarise(mediana = median(UserRating), media = mean(UserRating)) %>% 
+      filter(media > 9 | mediana >= 9)
+    
+    dados_table <- series_media_alta %>% 
+      arrange(media)
+    
+    head(dados_table)
+  })
   
 })
 
