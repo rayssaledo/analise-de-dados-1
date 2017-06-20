@@ -1,23 +1,24 @@
 ---
-title: "Problema3-CP1"
+title: "Analisando os filmes da atriz Jennifer Lopez"
 author: "Rayssa"
 date: "16 de junho de 2017"
 output: html_document
 ---
 
-```{r}
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
 library(tidyverse, warn.conflicts = F)
 library(rvest)
 library(plotly)
 library(cluster)
 library(ggdendro)
 theme_set(theme_light())
+source("plota_solucoes_hclust.R")
 ```
 
 
-```{r}
+```{r, warning=FALSE}
 from_page <- read_html("https://www.rottentomatoes.com/celebrity/jennifer_lopez/") %>% 
-    html_node("#filmographyTbl") %>% # A sintaxe da expressão é de um seletor à lá JQuery: https://rdrr.io/cran/rvest/man/html_nodes.html 
+    html_node("#filmographyTbl") %>% 
     html_table(fill=TRUE) %>% # Faz parse
     as.tibble()
 
@@ -28,9 +29,127 @@ filmes = from_page %>%
     mutate(RATING = as.numeric(gsub("%", "", RATING)), 
            `BOX OFFICE` = as.numeric(gsub("[$|M]", "", `BOX OFFICE`))) %>% 
     filter(`BOX OFFICE` != 'NA') 
+``` 
+
+#Descrevendo as variáveis
+
+Os dados utilizados para essa análise de filmes estão no seguinte endereço: 'https://www.rottentomatoes.com/celebrity/'. As variáveis usadas foram 'Rating' que corresponde a avaliação dos usuários dada em porcentagem e 'Box Office' equivalente a bilheteria de cada filme, ou seja, o lucro ou prejuízo para cada filme. E iremos analisar os filmes feitos pela atriz Jennifer Lopez!!
+
+##E o que vamos analisar?
+
+Iremos analisar os tipos de filme dessa linda atriz, segundo o sucesso de público (bilheteria) e de crítica (avaliações no rotten tomatoes). 
+
+#Análise
+
+Primeiro vamos procurar descrever a estrutura dos dados analisando os grupos mais semelhantes entre si que com o restante dos dados, através:
+
+1) Das avaliações dos filmes:
+
+
+```{r}
+filmes %>% 
+    ggplot(aes(x = "Filmes", y = RATING)) + 
+    geom_jitter(width = .01, height = 0, size = 2, alpha = .6)
+
+filmes %>% 
+    ggplot(aes(x = RATING)) + 
+    geom_histogram(bins = 16) + 
+    geom_rug()
+```
+
+2) Da renda do filme:
+
+```{r}
+filmes %>% 
+    ggplot(aes(x = "Filmes", y = `BOX OFFICE`)) + 
+    geom_jitter(width = .02, height = 0, size = 2, alpha = .6)  
+    
+filmes %>% 
+    ggplot(aes(x = "Filmes", y = `BOX OFFICE`)) + 
+    geom_jitter(width = .02, height = 0, size = 2, alpha = .6) + 
+    scale_y_log10()
+
+filmes %>% 
+    ggplot(aes(x = `BOX OFFICE`)) + 
+    geom_histogram(bins = 20) + 
+    geom_rug()
+
+filmes %>% 
+    ggplot(aes(x = `BOX OFFICE`)) + 
+    geom_histogram(bins = 20) + 
+    scale_x_log10() + 
+    geom_rug()
+```
+
+#Agrupamento
+
+Vamos fazer agrupamento entre a avaliação dos usuários e a bilheteria de cada filme de Jennifer.
+
+```{r}
+p = filmes %>% 
+    ggplot(aes(x = RATING, y = `BOX OFFICE`, label = TITLE)) + 
+    geom_point() 
+p
+ggplotly(p)
 ```
 
 
+```{r}
+agrupamento_h_2d = filmes %>% 
+    column_to_rownames("TITLE") %>%
+    select(RATING, `BOX OFFICE`) %>%
+    dist(method = "euclidean") %>% 
+    hclust(method = "centroid")
 
+ggdendrogram(agrupamento_h_2d, rotate = TRUE)
+
+data.frame(k = NROW(agrupamento_h_2d$height):1, 
+           height = agrupamento_h_2d$height) %>% 
+    ggplot(aes(x = k, y = height)) + 
+    geom_line(colour = "grey") + 
+    geom_point() + 
+    labs(x = "Número de clusters produzido", y = "Dissimilaridade na junção")
+```
+
+Como você viu acima foi possível separar os filmes em grupos.Portanto, Vamos visualizá-los:
+
+```{r}
+plota_hclusts_2d(agrupamento_h_2d, 
+                 filmes, 
+                 c("RATING", "`BOX OFFICE`"), 
+                 linkage_method = "centroid", ks = 1:6)
+```
+
+#Solução
+
+```{r}
+agrupamento_h_2d = filmes %>% 
+    column_to_rownames("TITLE") %>%
+    select(RATING, `BOX OFFICE`) %>% 
+    mutate(`BOX OFFICE` = log10(`BOX OFFICE`)) %>% 
+    mutate_all(funs(scale)) %>% 
+    dist(method = "euclidean") %>% 
+    hclust(method = "centroid")
+
+ggdendrogram(agrupamento_h_2d, rotate = TRUE)
+
+filmes2 = filmes %>% mutate(`BOX OFFICE` = log10(`BOX OFFICE`))
+plota_hclusts_2d(agrupamento_h_2d, 
+                 filmes2, 
+                 c("RATING", "`BOX OFFICE`"), 
+                 linkage_method = "ward.D", ks = 1:6) + scale_y_log10()
+
+```
+
+```{r}
+distancias = filmes %>% 
+    column_to_rownames("TITLE") %>%
+    select(RATING, `BOX OFFICE`) %>% 
+    mutate(`BOX OFFICE` = log10(`BOX OFFICE`)) %>% 
+    mutate_all(funs(scale)) %>% 
+    dist(method = "euclidean")
+
+plot(silhouette(cutree(agrupamento_h_2d, k = 4), distancias))
+```
 
 
