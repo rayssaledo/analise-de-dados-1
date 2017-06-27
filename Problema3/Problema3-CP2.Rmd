@@ -1,0 +1,42 @@
+---
+title: "Análise"
+author: "Rayssa"
+date: "23 de junho de 2017"
+output: html_document
+---
+
+```{r}
+library(dplyr)
+library(readr)
+```
+
+```{r}
+filmes <- read.csv("../dados/meta_data7.csv")
+personagens <- read.csv("../dados/character_list5.csv")
+
+tabela_junção <- left_join(filmes, personagens, "script_id")
+
+idade_menor_que_18 <-  tabela_junção %>% 
+  mutate(age = as.integer(age)) %>% 
+  filter(age <= 18)
+
+x = mean(idade_menor_que_18$words)
+print (x)
+
+idade_entre_18_55 <- tabela_junção %>% 
+  mutate(age = as.integer(age)) %>% 
+  filter(age >= 19 && age <= 55)
+
+idade_maior_que_55 <- tabela_junção %>% 
+  mutate(age = as.integer(age)) %>% 
+  filter(age >=  56)
+
+# filme_agrupado <- tabela_junção %>% 
+#   filter(age != 'NULL') %>%
+#   mutate(age = as.integer(age)) %>% 
+#   group_by(title, year, gross) %>%  summarise(idade_25perc = quantile(age, p = .25, na.rm = T),
+#               idade_mediana = median(age, na.rm = T), 
+#               idade_75perc = quantile(age, p = .75, na.rm = T))
+
+```
+
