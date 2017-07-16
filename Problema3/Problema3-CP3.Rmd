@@ -5,10 +5,6 @@ date: "12 de julho de 2017"
 output: html_document
 ---
 
-```{r}
-install.packages(gg)
-```
-
 
 ```{r setup, include=FALSE, echo=FALSE}
 knitr::opts_chunk$set(
