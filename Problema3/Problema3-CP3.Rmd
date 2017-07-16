@@ -1,0 +1,220 @@
+---
+title: "Usando PCA"
+author: "Rayssa"
+date: "12 de julho de 2017"
+output: html_document
+---
+
+```{r}
+install.packages(gg)
+```
+
+
+```{r setup, include=FALSE, echo=FALSE}
+knitr::opts_chunk$set(
+	echo = FALSE,
+	message = FALSE,
+	warning = FALSE
+)
+```
+
+```{r load_code, echo=FALSE, warning=FALSE}
+require(GGally, quietly = TRUE)
+require(reshape2, quietly = TRUE)
+require(tidyverse, quietly = TRUE, warn.conflicts = FALSE)
+
+library(ggfortify)
+library(cluster)
+library(ggdendro)
+library(broom)
+library(dplyr)
+library(plotly)
+library(readr)
+library(magrittr)
+
+theme_set(theme_bw())
+```
+
+#Tipos de filmes
+Vamos verificar a existência de tipos de filmes quanto a mediana da idade dos homens e das mulheres, quantidade de homens, quantidade de mulheres. Será que existem grupos que definem comportamentos comuns para os filmes disponibilizados? Utilizaremos os dados disponíveis no seguinte endereço: https://github.com/matthewfdaniels/scripts.
+
+
+#Definindo as variáveis a serem utilizadas 
+
+Neste post iremos utilizar 4 variáveis que foram calculadas a partir dos dados disponibilizados pelo endereço do Github acima. As variáveis são as seguintes: mediana da idade dos homens e mulheres, a quantidade de homens e de mulheres que participaram dos filmes. 
+
+
+```{r}
+filmes <- read.csv("../dados/meta_data7.csv")
+personagens <- read.csv("../dados/character_list5.csv")
+
+tabela_juncao <- left_join(filmes, personagens, "script_id")
+
+mulheres = tabela_juncao %>%
+  filter(gender == 'f',age != 'NULL') %>%
+  mutate(age = as.integer(age)) %>%
+  group_by(script_id, imdb_id, title, year, gross) %>%
+  summarise(n_f=n(), age_f=median(age)) %>% 
+  filter(n_f > 1)
+
+homens = tabela_juncao %>%
+  filter(gender == 'm',age != 'NULL') %>%
+  mutate(age = as.integer(age)) %>%
+  group_by(script_id, imdb_id, title, year, gross) %>%
+  summarise(n_m=n(), age_m=median(age)) %>% 
+  filter(n_m > 1)
+
+dados = merge(mulheres, homens, 
+                           by=c('script_id','imdb_id','title','year','gross'))
+duplicados = dados %>%
+  group_by(title) %>% filter(row_number() > 1)
+
+dados = dados %>% 
+  filter(!(title %in% duplicados$title))
+  
+dados = dados %>%
+  subset(select = -c(script_id,imdb_id,year,gross))
+```
+
+Como existiam valores nulos na variável 'age'(idade), filtrei os dados retirando-os, pois não faz sentido para a análise utilizar personagens com idade nula.  
+
+
+```{r}
+dw = dados
+
+# Escala de log 
+dw2 <- dw %>% 
+    mutate_each(funs(log), 2:5)
+
+dw2.scaled = dw2 %>% 
+  mutate_each(funs(as.vector(scale(.))), 2:5)
+
+set.seed(123)
+explorando_k = tibble(k = 1:15) %>% 
+    group_by(k) %>% 
+    do(
+        kmeans(select(dw2.scaled, -title), 
+               centers = .$k, 
+               nstart = 20) %>% glance()
+    )
+
+```
+
+#Escolhendo o número de grupos
+
+Antes de realizar o agrupamento dos filmes, precisamos decidir qual a melhor quantidade de grupos pela qual os filmes serão agrupados, para que eles sejam realmente o mais semelhantes entre si dentro do seu grupo.
+
+```{r}
+set.seed(123)
+explorando_k = tibble(k = 1:15) %>% 
+    group_by(k) %>% 
+    do(
+        kmeans(select(dw2.scaled, -title), 
+               centers = .$k, 
+               nstart = 20) %>% glance()
+    )
+
+explorando_k %>% 
+    ggplot(aes(x = k, y = betweenss / totss)) + 
+    geom_line() + 
+    geom_point()
+```
+
+De acordo com o gráfico acima é possível verificar que a melhor quantidade de grupos será 4, pois a partir do quinto ponto do gráfico a distância para de crescer.
+
+#Agrupamento dos filmes utilizando o algoritmo k-means
+
+Depois de ter definido o melhor número de grupos para os filmes, chegou a hora de realizar o agrupamento de fato e analisar cada grupo para assim conseguir nomeá-los de acordo com suas características. 
+
+```{r}
+# O agrupamento:
+km = dw2.scaled %>% 
+    select(-title) %>% 
+    kmeans(centers = 4, nstart = 20)
+
+# O df em formato longo, para visualização 
+dw2.scaled.km.long = km %>% 
+    augment(dw2.scaled) %>% # Adiciona o resultado de km 
+                            # aos dados originais dw2.scaled em 
+                            # uma variável chamada .cluster
+    gather(key = "variável", 
+           value = "valor", 
+           -title, -.cluster) # = move para long todas as 
+                                            # variávies menos repository_language 
+                                            # e .cluster
+dw2.scaled.km.long %>% 
+    ggplot(aes(x = `variável`, y = valor, group = title, colour = .cluster)) + 
+    #geom_point(alpha = 0.2) + 
+    geom_line(alpha = .5) + 
+    facet_wrap(~ .cluster) 
+
+```
+
+Verificando o gráfico acima podemos observar grupos que caracterizam os filmes existentes nos dados, olhando a direção em que as linhas dos filmes cruzam cada uma das variáveis.
+
+
+# Redução de dimensionalidade usando PCA (Análise de Componentes Principais)
+
+No gráfico abaixo podemos ver a visualização em duas dimensões da redução de dimensionalidade das 4 dimensões mencionadas no ínicio desse post.
+
+
+```{r,  fig.height=2, fig.width=4}
+autoplot(km, data = dw2.scaled, label = TRUE) %>%
+  ggplotly()
+```
+
+
+
+As variáveis PC1 e PC2 correspondem as 4 variáveis originais, elas são criadas a partir da correlação entre as variáveis originais, utilizando-se a técnica PCA.
+
+
+```{r,  fig.height=2, fig.width=4}
+autoplot(km, data = dw2.scaled, size = 2, 
+         colour = "grey",
+         loadings = TRUE, loadings.colour = 'blue',
+         loadings.label = TRUE, 
+         loadings.label.size = 3) %>% ggplotly()
+```
+
+Analisando o gráfico acima age_m (mediana da idade dos homens) e age_f (mediana da idade das mulheres) variam quando os valores são alterados no eixo horizontal (direção de PC1), não variam  tanto em relação há mudanças de valores no eixo vertical (direção de PC2). Já as variáveis n_m (quantidade de homens) e n_f (quantidade de mulheres) estão bem mais relacionadas com a variável PC2 do que com a PC1, ou seja, elas variam principalmente quando há modificações nos valores do eixo vertical.
+
+Também podemos ver a mesma informação do gráfico mostrando PC1 e PC2 como funções das 4 variáveis, da seguinte forma:
+
+
+```{r}
+pr.out <- prcomp(select(dw2.scaled, -title), scale=FALSE)
+
+tidy(pr.out,"variables") %>% 
+  filter(PC <= 2) %>% 
+  spread(column, value)
+```
+
+Os valores da tabela acima correspondem aos coeficientes. A partir desses valores podemos concluir que se mudar alguma unidade nas duas primeiras variáveis aumenta PC1, já as variáveis n_f e n_m possuem um efeito menor em relação a PC1. E analisando os valores de PC2 percebemos que ocorre o contrário do mencionado anteriormente, se mudar uma unidade nas variáveis n_f e n_m aumenta PC2 e faz com que um ponto esteja mais à cima ou abaixo no gráfico.
+
+## Correlação entre as variáveis e os PCs
+
+```{r}
+filmes_pca <- dw2.scaled %>% 
+             column_to_rownames("title") %>% 
+              prcomp(scale = FALSE) 
+
+tidy(filmes_pca, "pcs") %>% 
+    ggplot(aes(x = PC, y = cumulative, label = cumulative)) + 
+    geom_line() + 
+    geom_point() + 
+    geom_text(vjust = 1, hjust = -.1)
+```
+
+<!-- AQUI! -->
+
+<!-- Podemos perceber que as variáveis são pouco correlacionadas. De certa maneira, isso não significa que elas não tenham informação parecida. As variáveis words_m e words_f são pouco correlacionadas mas as duas são componentes principais para trazer informação para PC1, por isso, PC1 é uma função dessas 2 variáveis. Como n_m e n_f não trazem muita informação para PC1, o método PCA cria PC2 que vai ser representado por estas duas variáveis que são menos correlacionadas com as demais. Da mesma forma, n_f e n_m são pouco correlacionadas mas a união delas trás muita informação para PC2. -->
+
+## Interpretação dos grupos presentes na visualização
+
+<!-- Podemos entender que existem 4 grupos de filmes segundo as 4 variáveis que usamos. -->
+
+```{r}
+ggplotly(autoplot(km, data = dw2.scaled, label = TRUE))
+```
+
+<!-- Comentar sobre os grupos! -->
