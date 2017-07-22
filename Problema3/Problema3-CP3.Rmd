@@ -1,5 +1,5 @@
 ---
-title: "Usando PCA"
+title: "Reduzindo as dimensões com PCA"
 author: "Rayssa"
 date: "12 de julho de 2017"
 output: html_document
@@ -187,12 +187,14 @@ tidy(pr.out,"variables") %>%
 
 Os valores da tabela acima correspondem aos coeficientes. A partir desses valores podemos concluir que se mudar alguma unidade nas duas primeiras variáveis aumenta PC1, já as variáveis n_f e n_m possuem um efeito menor em relação a PC1. E analisando os valores de PC2 percebemos que ocorre o contrário do mencionado anteriormente, se mudar uma unidade nas variáveis n_f e n_m aumenta PC2 e faz com que um ponto esteja mais à cima ou abaixo no gráfico.
 
-## Correlação entre as variáveis e os PCs
+##Quanto de informação foi perdida na redução de dimensões?
+
+É preciso quantificar quanta informação foi perdida quando reduzimos as quatro dimensões em apenas duas, para isso podemos comparar a variância acumulada nos PCs com a variância total existente com todas as variáveis originais nos dados. Podemos verificar isto analisando o gráfico abaixo:
 
 ```{r}
-filmes_pca <- dw2.scaled %>% 
-             column_to_rownames("title") %>% 
-              prcomp(scale = FALSE) 
+filmes_pca = dw2.scaled %>% 
+    column_to_rownames("title") %>% 
+    prcomp(scale = FALSE) 
 
 tidy(filmes_pca, "pcs") %>% 
     ggplot(aes(x = PC, y = cumulative, label = cumulative)) + 
@@ -201,16 +203,32 @@ tidy(filmes_pca, "pcs") %>%
     geom_text(vjust = 1, hjust = -.1)
 ```
 
-<!-- AQUI! -->
 
-<!-- Podemos perceber que as variáveis são pouco correlacionadas. De certa maneira, isso não significa que elas não tenham informação parecida. As variáveis words_m e words_f são pouco correlacionadas mas as duas são componentes principais para trazer informação para PC1, por isso, PC1 é uma função dessas 2 variáveis. Como n_m e n_f não trazem muita informação para PC1, o método PCA cria PC2 que vai ser representado por estas duas variáveis que são menos correlacionadas com as demais. Da mesma forma, n_f e n_m são pouco correlacionadas mas a união delas trás muita informação para PC2. -->
 
-## Interpretação dos grupos presentes na visualização
+Podemos concluir que com dois componentes principais (PCs) conseguimos representar 60,58% da informação original dos dados.
+
+## Correlação entre as variáveis e os PCs
+
+Podemos perceber que as variáveis têm uma certa correlação. As variáveis age_f e age_m possuem uma alta correlação e são componentes principais para trazer informação para o componente PC1, isso quer dizer que PC1 é uma função dessas variáveis. Como as outras duas variáveis não trazem muita informação para PC1, é criado outro componente chamado PC2 sendo representado por n_m e n_f que possuem correlação entre si, mas não é tão alta quanto a correlação entre age_f e age_m.
+
+
+## Interpretação dos grupos
 
 <!-- Podemos entender que existem 4 grupos de filmes segundo as 4 variáveis que usamos. -->
 
-```{r}
-ggplotly(autoplot(km, data = dw2.scaled, label = TRUE))
+```{r,  fig.height=2, fig.width=4}
+ggplotly(autoplot(km, data = dw2.scaled, label = TRUE,
+                  loadings = TRUE, loadings.colour = 'blue',
+         loadings.label = TRUE, 
+         loadings.label.size = 3))
 ```
 
-<!-- Comentar sobre os grupos! -->
+Observando o gráfico acima podemos nomear os grupos da seguinte maneira:
+
+1) Grupo 1: possui valores altos de age_f e age_m, que variam bastante e valores baixos de n_m e n_f que não variam tanto. Este grupo pode ser chamado de "Filme com os experientes!". 
+
+2) Grupo 2: possui valores baixos da mediana da idade dos homens(age_m) e das mulheres(age_f) e possui valores da quantidade de mulheres mais altos que a dos homens, ou seja, este grupo é caracterizado por ter um maior número de mulheres e por ter uma faixa de idade entre homens e mulheres bem semelhantes. Pode ser denominado de "Mulheres sim senhor!".
+
+3) Grupo 3: possui valores altos para a mediana da idade dos homens e das mulheres e valores baixos para a quantidade de homens e de mulheres, porém a quantidade de homens é mais alto em relação as mulheres, ou seja, este grupo é caracterizado por ter um número maior de homens e as idades entre os gêneros semelhantes. Um nome característico para esse grupo é "Homens sim senhor!".
+
+4) Grupo 4: possui valores mais baixos de n_m do que de n_f e  valores baixos da mediana da idade dos homens e das mulheres, porém os das mulheres são mais altos que os dos homens. Pode ser denominado de "Filme das novinhas!".
