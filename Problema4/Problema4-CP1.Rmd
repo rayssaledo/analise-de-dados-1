@@ -1,0 +1,121 @@
+---
+title: "Linguagens de programação no Github"
+author: "Rayssa"
+date: "22 de julho de 2017"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+library(ggplot2)
+library(plotly)
+library(GGally)
+library(dplyr)
+library(tidyverse)
+library(resample)
+theme_set(theme_bw())
+```
+
+# Dados no github
+
+Neste relatório vamos analisar uma amostra de dados da atividade global do github disponível neste link <https://raw.githubusercontent.com/nazareno/fpcc2/master/datasets/github-users-committing-filetypes.csv>, para respondermos algumas perguntas sobre liguagens de programação utilizadas pelos os usuários que fazem uso do github. Para iniciar esta análise precisamos escolher duas linguagens, neste caso será **Java** e **Python**.
+
+
+#Descrição dos dados utilizados
+
+Para esta análise iremos utilizar as seguintes variáveis: *file_extension* que corresponde a extensão do arquivo manipulado pelo usuário, *month_day* o dia do mês, *the_month* o mês e *the_year* o ano em que o arquivo foi criado/modificado e *users* a quantidade de pessoas que editou os arquivos.
+
+
+```{r message = FALSE, warning = FALSE}
+dadosGithub <- read.csv("../dados/github-users-committing-filetypes.csv")
+
+dadosGithub$date <- paste(dadosGithub$month_day, dadosGithub$the_month, dadosGithub$the_year, sep = "-")
+
+java <- dadosGithub %>% 
+  filter(file_extension == 'java') %>% 
+  mutate(weekday = weekdays(as.Date(date,'%d-%m-%Y')))
+
+
+python <- dadosGithub %>% 
+  filter(file_extension == 'py') %>% 
+  mutate(weekday = weekdays(as.Date(date,'%d-%m-%Y')))
+
+```
+
+Antes de responder as perguntas desejadas, vamos observar como cada liguagem de programação se comporta em relação a sua popularidade durante os dias da semana.
+
+##Java
+
+```{r fig.width=4, echo=FALSE, fig.height=2, message = FALSE, warning = FALSE}
+
+p = java %>% 
+  ggplot(aes(x = weekday, 
+             y = users)) + 
+  geom_boxplot(outlier.colour = NA) +
+  geom_point(aes(text = paste("Dia da semana:", weekday, "<br>", "Popularidade:", users)),
+             position = position_jitter(width = .2), 
+             alpha = .6, 
+             color = "pink") +
+  labs(title = "Popularidade de Java", 
+         x = "Dia da semana", 
+         y = "Popularidade")
+
+ggplotly(p, tooltip = "text")
+```
+
+A partir do gráfico mostrado acima podemos perceber que a popularidade dessa linguagem tem como variação de 1100 a 4500 usuários por dia. Durante os fins de semana o número de usuários é bem menor e há a existência de outliers durante toda a semana, representando valores com um grande afastamento dos demais valores.
+
+
+##Python
+
+```{r fig.width=4, echo=FALSE, fig.height=2, message = FALSE, warning = FALSE}
+p = python %>%
+  ggplot(aes(x = weekday,
+             y = users)) +
+  geom_boxplot(outlier.colour = NA) +
+  geom_point(aes(text = paste("Dia da semana:", weekday, "<br>", "Popularidade:", users)),
+             position = position_jitter(width = .2),
+             alpha = .6,
+             color = "pink") +
+  labs(title = "Popularidade de Python",
+         x = "Dia da semana",
+         y = "Popularidade")
+
+ggplotly(p, tooltip = "text")
+```
+
+De acordo com o gráfico acima podemos perceber que Python é um pouco mais popular que Java. A popularidade varia entre 1400 a 5600 usuários por dia. Durante os fins de semana o número de usuários também é bem menor e há a existência de outliers durante toda a semana, representando valores com um grande afastamento dos demais valores.
+
+
+#Respondendo as perguntas
+
+###1) Para cada uma delas, há uma diferença significativa na sua popularidade durante a semana e durante o fim de semana? Essa diferença é grande?
+
+**Linguagem de programação: Java**
+
+```{r message = FALSE, warning = FALSE}
+java_semana <- java %>% 
+  filter(weekday != 'sábado', weekday != 'domingo')
+
+java_fds <- java %>% 
+  filter(weekday == 'sábado'| weekday == 'domingo')
+```
+
+
+**Linguagem de programação: Python**
+
+
+```{r message = FALSE, warning = FALSE}
+python_semana <- python %>% 
+  filter(weekday != 'sábado', weekday != 'domingo')
+
+python_fds <- python %>% 
+  filter(weekday == 'sábado'| weekday == 'domingo')
+```
+
+
+###2) Existe uma diferença significativa entre as duas linguagens na sua variação de popularidade nos finais de semana?
+
+
+
+
