@@ -13,6 +13,7 @@ library(GGally)
 library(dplyr)
 library(tidyverse)
 library(resample)
+library(boot) 
 theme_set(theme_bw())
 ```
 
@@ -26,7 +27,7 @@ Neste relatório vamos analisar uma amostra de dados da atividade global do gith
 Para esta análise iremos utilizar as seguintes variáveis: *file_extension* que corresponde a extensão do arquivo manipulado pelo usuário, *month_day* o dia do mês, *the_month* o mês e *the_year* o ano em que o arquivo foi criado/modificado e *users* a quantidade de pessoas que editou os arquivos.
 
 
-```{r message = FALSE, warning = FALSE}
+```{r message = FALSE, echo=TRUE, warning=FALSE}
 dadosGithub <- read.csv("../dados/github-users-committing-filetypes.csv")
 
 dadosGithub$date <- paste(dadosGithub$month_day, dadosGithub$the_month, dadosGithub$the_year, sep = "-")
@@ -46,7 +47,7 @@ Antes de responder as perguntas desejadas, vamos observar como cada liguagem de 
 
 ##Java
 
-```{r fig.width=4, echo=FALSE, fig.height=2, message = FALSE, warning = FALSE}
+```{r fig.width=4, echo=TRUE, fig.height=2, message=FALSE, warning=FALSE}
 
 p = java %>% 
   ggplot(aes(x = weekday, 
@@ -68,7 +69,7 @@ A partir do gráfico mostrado acima podemos perceber que a popularidade dessa li
 
 ##Python
 
-```{r fig.width=4, echo=FALSE, fig.height=2, message = FALSE, warning = FALSE}
+```{r fig.width=4, echo=TRUE, fig.height=2, message=FALSE, warning=FALSE}
 p = python %>%
   ggplot(aes(x = weekday,
              y = users)) +
@@ -93,28 +94,94 @@ De acordo com o gráfico acima podemos perceber que Python é um pouco mais popu
 
 **Linguagem de programação: Java**
 
-```{r message = FALSE, warning = FALSE}
+```{r message = FALSE, echo=TRUE, warning=FALSE}
 java_semana <- java %>% 
-  filter(weekday != 'sábado', weekday != 'domingo')
+  filter(weekday != 'sábado', weekday != 'domingo') %>% 
+  mutate(isFds = FALSE)
 
 java_fds <- java %>% 
-  filter(weekday == 'sábado'| weekday == 'domingo')
+  filter(weekday == 'sábado'| weekday == 'domingo') %>% 
+  mutate(isFds = TRUE)
+
+javaMerge = rbind(java_fds, java_semana)
 ```
 
+
+  *Diferença entre a popularidade de usuários durante os dias de semana e nos finais de semana (JAVA)*
+
+```{r, echo=TRUE}
+fun.boot <- function(dados, indices) {
+    d = dados[indices,]
+    fds = d %>% filter(isFds == TRUE) 
+    fds =  median(fds$users)
+    nfds = d %>% filter(isFds == FALSE) 
+    nfds =  median(nfds$users)
+    teta = nfds / fds
+    return(teta)
+}
+
+res.boot <- boot(data = javaMerge, 
+                 statistic = fun.boot, 
+                 R = 2000)
+
+boot.ci(boot.out = res.boot, conf = 0.95, type = "bca")
+
+```
+
+<!-- Como podemos verificar acima podemos afirmar com 95% de confiança que a diferença de popularidade entre os dias da semana e os fins de semana para a liguagem Java está em um intervalo de 1649 a 1753 usuários. Assim percebemos...  -->
 
 **Linguagem de programação: Python**
 
 
-```{r message = FALSE, warning = FALSE}
+```{r message = FALSE, echo=TRUE, warning=FALSE}
 python_semana <- python %>% 
-  filter(weekday != 'sábado', weekday != 'domingo')
+  filter(weekday != 'sábado', weekday != 'domingo') %>% 
+  mutate(isFds = FALSE)
 
 python_fds <- python %>% 
-  filter(weekday == 'sábado'| weekday == 'domingo')
+  filter(weekday == 'sábado'| weekday == 'domingo') %>% 
+  mutate(isFds = TRUE)
+
+pythonMerge = rbind(python_fds, python_semana)
+```
+
+
+*Diferença entre a popularidade de usuários durante os dias de semana e nos finais de semana (PYTHON)*
+
+```{r, echo=TRUE}
+res.boot <- boot(data = pythonMerge, 
+                 statistic = fun.boot, 
+                 R = 2000)
+
+boot.ci(boot.out = res.boot, conf = 0.95, type = "bca")
+
 ```
 
 
 ###2) Existe uma diferença significativa entre as duas linguagens na sua variação de popularidade nos finais de semana?
+
+```{r, echo=TRUE}
+javaAndPythonFds = rbind(python_fds, java_fds)
+
+fun.boot <- function(dados, indices) {
+    d = dados[indices,]
+    javaFds = d %>% filter(file_extension == 'java') 
+    javaFds =  median(javaFds$users)
+    pythonFds = d %>% filter(file_extension == 'py') 
+    pythonFds =  median(pythonFds$users)
+    teta = javaFds / pythonFds
+    return(teta)
+}
+
+res.boot <- boot(data = javaAndPythonFds, 
+                 statistic = fun.boot, 
+                 R = 2000)
+
+boot.ci(boot.out = res.boot, conf = 0.95, type = "bca")
+
+
+```
+
 
 
 
