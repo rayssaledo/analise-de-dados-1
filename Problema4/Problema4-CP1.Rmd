@@ -128,7 +128,8 @@ boot.ci(boot.out = res.boot, conf = 0.95, type = "bca")
 
 ```
 
-<!-- Como podemos verificar acima podemos afirmar com 95% de confiança que a diferença de popularidade entre os dias da semana e os fins de semana para a liguagem Java está em um intervalo de 1649 a 1753 usuários. Assim percebemos...  -->
+Como podemos verificar acima, com 95% de confiança a diferença das medianas de popularidade entre os dias da semana e os fins de semana para a linguagem *Java* está no intervalo entre 1.649 a 1.753. Assim percebemos que Java é uma liguagem que os usuários utilizam muito mais durante a semana do que nos fins de semana. Acredito que essa diferença é considerada alta, levando em consideração que durante os dias, os commits dos usuários em pouquíssimas situações ultrapassa 4100 por dia.Desta forma podemos concluir que essa diferença é relevante e tem essa significância de que com 95% de confiança se encontra no intervalo mencionado anteriormente.
+
 
 **Linguagem de programação: Python**
 
@@ -157,31 +158,29 @@ boot.ci(boot.out = res.boot, conf = 0.95, type = "bca")
 
 ```
 
+Analisando os dados acima podemos verificar que a diferença das medianas de popularidade entre os dias da semana e os fins de semana para a linguagem *Python* está no intervalo entre 1.780 a 1.879. Desta forma podemos perceber que Python é uma linguagem em que os usuários a utilizam muito mais durante a semana do que durante o final de semana. Essa diferença é relevante e é considerada alta, levando em consideração que durante os dias, os commits dos usuários em pouquíssimas situações ultrapassa 5100 por dia. Também podemos perceber que essa diferença tem uma significância de que com 95% de confiança se encontra no intervalo mencionado anteriormente.
+ 
 
 ###2) Existe uma diferença significativa entre as duas linguagens na sua variação de popularidade nos finais de semana?
 
 ```{r, echo=TRUE}
-javaAndPythonFds = rbind(python_fds, java_fds)
+median <- bootstrap2(data = (java_fds)$users, 
+               data2 = (python_fds)$users,
+               sd)
 
-fun.boot <- function(dados, indices) {
-    d = dados[indices,]
-    javaFds = d %>% filter(file_extension == 'java') 
-    javaFds =  median(javaFds$users)
-    pythonFds = d %>% filter(file_extension == 'py') 
-    pythonFds =  median(pythonFds$users)
-    teta = javaFds / pythonFds
-    return(teta)
-}
+median_ci = CI.percentile(median, probs = c(.025, .975))
 
-res.boot <- boot(data = javaAndPythonFds, 
-                 statistic = fun.boot, 
-                 R = 2000)
-
-boot.ci(boot.out = res.boot, conf = 0.95, type = "bca")
-
+data.frame(median_ci) %>% 
+  ggplot(aes(x = "Diferença", ymin = X2.5., ymax = X97.5.)) + 
+  geom_errorbar(width = .2) + 
+  geom_hline(yintercept = 0, colour = "purple")
 
 ```
 
+
+Para responder esta pergunta precisamos utilizar o desvio padrão para cada linguagem de programação (Java e Python) e para cada final de semana e assim descobrir qual a diferença entre estes desvios.
+
+Pelo gráfico gerado acima podemos ver que a diferença do desvio padrão das linguagens está no intervalo entre -78.7941546 a 42.3996571. Como esse intervalo é composto pelo valor zero, não podemos afirmar nada, ou seja, não sabemos se há realmente uma diferença significativa.
 
 
 
