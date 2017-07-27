@@ -128,7 +128,7 @@ boot.ci(boot.out = res.boot, conf = 0.95, type = "bca")
 
 ```
 
-Como podemos verificar acima, com 95% de confiança a diferença das medianas de popularidade entre os dias da semana e os fins de semana para a linguagem *Java* está no intervalo entre 1.649 a 1.753. Assim percebemos que Java é uma liguagem que os usuários utilizam muito mais durante a semana do que nos fins de semana. Acredito que essa diferença é considerada alta, levando em consideração que durante os dias, os commits dos usuários em pouquíssimas situações ultrapassa 4100 por dia.Desta forma podemos concluir que essa diferença é relevante e tem essa significância de que com 95% de confiança se encontra no intervalo mencionado anteriormente.
+Como podemos verificar acima, com 95% de confiança a diferença das medianas de popularidade entre os dias da semana e os fins de semana para a linguagem *Java* está no intervalo descrito acima. Assim percebemos que Java é uma liguagem que os usuários utilizam muito mais durante a semana do que nos fins de semana. Acredito que essa diferença é considerada alta, levando em consideração que durante os dias, os commits dos usuários em pouquíssimas situações ultrapassa 4100 por dia.Desta forma podemos concluir que essa diferença é relevante e tem essa significância de que com 95% de confiança se encontra no intervalo mencionado anteriormente.
 
 
 **Linguagem de programação: Python**
@@ -158,7 +158,7 @@ boot.ci(boot.out = res.boot, conf = 0.95, type = "bca")
 
 ```
 
-Analisando os dados acima podemos verificar que a diferença das medianas de popularidade entre os dias da semana e os fins de semana para a linguagem *Python* está no intervalo entre 1.780 a 1.879. Desta forma podemos perceber que Python é uma linguagem em que os usuários a utilizam muito mais durante a semana do que durante o final de semana. Essa diferença é relevante e é considerada alta, levando em consideração que durante os dias, os commits dos usuários em pouquíssimas situações ultrapassa 5100 por dia. Também podemos perceber que essa diferença tem uma significância de que com 95% de confiança se encontra no intervalo mencionado anteriormente.
+Analisando os dados acima podemos verificar que a diferença das medianas de popularidade entre os dias da semana e os fins de semana para a linguagem *Python* está no intervalo descrito acima. Desta forma podemos perceber que Python é uma linguagem em que os usuários a utilizam muito mais durante a semana do que durante o final de semana. Essa diferença é relevante e é considerada alta, levando em consideração que durante os dias, os commits dos usuários em pouquíssimas situações ultrapassa 5100 por dia. Também podemos perceber que essa diferença tem uma significância de que com 95% de confiança se encontra no intervalo mencionado anteriormente.
  
 
 ###2) Existe uma diferença significativa entre as duas linguagens na sua variação de popularidade nos finais de semana?
@@ -178,10 +178,9 @@ data.frame(median_ci) %>%
 ```
 
 
-Para responder esta pergunta precisamos utilizar o desvio padrão para cada linguagem de programação (Java e Python) e para cada final de semana e assim descobrir qual a diferença entre estes desvios.
+Para responder esta pergunta precisamos utilizar o desvio padrão para cada linguagem de programação (Java e Python) e para cada final de semana e assim descobrir qual a diferença entre estes desvios, pois esta medida estatística indica o grau de variação de um conjunto de dados.
 
-Pelo gráfico gerado acima podemos ver que a diferença do desvio padrão das linguagens está no intervalo entre -78.7941546 a 42.3996571. Como esse intervalo é composto pelo valor zero, não podemos afirmar nada, ou seja, não sabemos se há realmente uma diferença significativa.
-
+Pelo gráfico gerado acima podemos ver que a diferença do desvio padrão das linguagens está no intervalo entre `r median_ci`. Portanto a diferença entre a popularidade nos fins de semana para as duas linguagens pode variar entre esses valores mencionados anteriormente, como esse intervalo é composto pelo valor zero, a popularidade das duas linguagens pode ser igual.
 
 
 
