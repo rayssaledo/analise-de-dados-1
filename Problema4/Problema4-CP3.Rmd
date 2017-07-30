@@ -1,0 +1,101 @@
+---
+title: "Analisando..."
+author: "Rayssa"
+date: "28 de julho de 2017"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+library(ggplot2)
+library(plotly)
+library(GGally)
+library(dplyr)
+library(tidyverse)
+library(resample)
+library(boot) 
+theme_set(theme_bw())
+```
+
+
+# Dados no github
+
+Neste relatório vamos analisar uma amostra de dados da atividade global do github disponível neste link <https://raw.githubusercontent.com/nazareno/fpcc2/master/datasets/github-users-committing-filetypes.csv> durante 2016 e 2017, para respondermos algumas perguntas sobre liguagens de programação utilizadas pelos os usuários que fazem uso do github. 
+
+
+#Descrição dos dados utilizados
+
+Para esta análise iremos utilizar as seguintes variáveis: *file_extension* que corresponde a extensão do arquivo manipulado pelo usuário, *month_day* o dia do mês, *the_month* o mês e *the_year* o ano em que o arquivo foi criado/modificado e *users* a quantidade de pessoas que editou os arquivos.
+
+
+```{r message = FALSE, echo=TRUE, warning=FALSE}
+dadosGithub <- read.csv("../dados/github-users-committing-filetypes.csv")
+
+dadosGithub$date <- paste(dadosGithub$month_day, dadosGithub$the_month, dadosGithub$the_year, sep = "-")
+```
+
+#Vamos as perguntas!!
+
+##Pergunta 1
+
+**1) Segunda e sexta têm popularidade maior que terça, quarta e quinta para a liguagem Java?** 
+
+Vamos tentar descobrir se os desenvolvedores que utilizam a linguagem *Java* são mais produtivos no meio da semana (terça, quarta e quinta) do que nos dias extremos da semana (segunda e sexta). Para isso iremos filtrar os dados com commits de arquivos Java e separá-los em meio da semana e extremos da semana. E logo depois iremos utilizar a técnica bootstrap para termos confiança na resposta que iremos encontrar, utilizaremos esta técnica para coletar informações da amostra de forma que possamos determinar um intervalo de confiança do valor da diferença da popularidade de Java no meio da semana e no meios dias extremos da semana.
+
+```{r, echo=TRUE, warning=FALSE}
+java <- dadosGithub %>% 
+  filter(file_extension == 'java') %>% 
+  mutate(weekday = weekdays(as.Date(date,'%d-%m-%Y')))
+
+extremos_semana <- java %>% 
+  filter(weekday == "segunda-feira" | weekday == "sexta-feira" )
+
+meio_da_semana <- java %>% 
+  filter(weekday == "terça-feira" | weekday == "quarta-feira" | weekday == "quinta-feira")
+
+
+median <- bootstrap2(data = (extremos_semana)$users, 
+               data2 = (meio_da_semana)$users,
+               median)
+
+median_ci = CI.percentile(median, probs = c(.025, .975))
+
+data.frame(median_ci) %>% 
+  ggplot(aes(x = "Diferença de popularidade", ymin = X2.5., ymax = X97.5.)) + 
+  geom_errorbar(width = .2) + 
+  geom_hline(yintercept = 0, colour = "purple")
+
+```
+
+De acordo com o gráfico mostrado acima podemos verificar que com 95% de confiança a diferença das medianas de popularidade entre os dias extremos da semana e o meio da semana para a linguagem *Java* está no intervalo entre `r median_ci` . Assim percebemos que Java é uma liguagem que os usuários utilizam muito mais durante o meio da semana do que nas segundas e sextas. Desta forma podemos concluir que essa diferença é relevante e tem essa significância de que com 95% de confiança se encontra no intervalo mencionado anteriormente.
+
+
+###Pergunta derivada
+
+**1.1) Existe uma diferença significativa na variação de popularidade entre os extremos da semana e o meio da semana da linguagem Java?**
+
+Para responder esta pergunta iremos utilizar a medida estatística *desvio padrão* com a finalidade de descobrir qual a diferença entre os desvios padrão durante o meio da semana e os extremos da semana, pois esta medida estatística indica o grau de variação de um conjunto de dados.
+
+
+
+```{r, echo=TRUE, warning=FALSE}
+median <- bootstrap2(data = (extremos_semana)$users, 
+               data2 = (meio_da_semana)$users,
+               sd)
+
+median_ci = CI.percentile(median, probs = c(.025, .975))
+
+data.frame(median_ci) %>% 
+  ggplot(aes(x = "Diferença", ymin = X2.5., ymax = X97.5.)) + 
+  geom_errorbar(width = .2) + 
+  geom_hline(yintercept = 0, colour = "purple")
+```
+
+
+Pelo gráfico gerado acima podemos ver que a diferença do desvio padrão está no intervalo entre `r median_ci`. Portanto a diferença entre a popularidade no meio e extremos da semana para a liguagem Java pode variar entre esses valores mencionados anteriormente, como esse intervalo é composto pelo valor zero, a popularidade das duas linguagens pode ser igual, porém não podemos afirmar nada, ou seja, não sabemos se há realmente uma diferença significativa.
+
+
+
+
+
+
