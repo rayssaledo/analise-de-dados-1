@@ -1,5 +1,5 @@
 ---
-title: "Analisando..."
+title: "Linguagens de Programação no Github"
 author: "Rayssa"
 date: "28 de julho de 2017"
 output: html_document
@@ -77,25 +77,69 @@ De acordo com o gráfico mostrado acima podemos verificar que com 95% de confian
 Para responder esta pergunta iremos utilizar a medida estatística *desvio padrão* com a finalidade de descobrir qual a diferença entre os desvios padrão durante o meio da semana e os extremos da semana, pois esta medida estatística indica o grau de variação de um conjunto de dados.
 
 
-
 ```{r, echo=TRUE, warning=FALSE}
-median <- bootstrap2(data = (extremos_semana)$users, 
+desvio_padrao <- bootstrap2(data = (extremos_semana)$users, 
                data2 = (meio_da_semana)$users,
                sd)
 
-median_ci = CI.percentile(median, probs = c(.025, .975))
+desvio_padrao_ci = CI.percentile(desvio_padrao, probs = c(.025, .975))
 
-data.frame(median_ci) %>% 
+data.frame(desvio_padrao_ci) %>% 
   ggplot(aes(x = "Diferença", ymin = X2.5., ymax = X97.5.)) + 
   geom_errorbar(width = .2) + 
   geom_hline(yintercept = 0, colour = "purple")
 ```
 
 
-Pelo gráfico gerado acima podemos ver que a diferença do desvio padrão está no intervalo entre `r median_ci`. Portanto a diferença entre a popularidade no meio e extremos da semana para a liguagem Java pode variar entre esses valores mencionados anteriormente, como esse intervalo é composto pelo valor zero, a popularidade das duas linguagens pode ser igual, porém não podemos afirmar nada, ou seja, não sabemos se há realmente uma diferença significativa.
+Pelo gráfico gerado acima podemos ver que a diferença do desvio padrão está no intervalo entre `r desvio_padrao_ci`. Portanto a diferença entre a popularidade no meio e extremos da semana para a liguagem Java pode variar entre esses valores mencionados anteriormente, como esse intervalo é composto pelo valor zero, a popularidade das duas linguagens pode ser igual, porém não podemos afirmar nada, ou seja, não sabemos se há realmente uma diferença significativa.
 
 
+##Pergunta 2
+
+**2) Os arquivos de extensão web (html, cs, js) são mais utilizados do que os arquivos de extensão de linguagens OO (java, cpp, rb)??** 
+
+Para responder a pergunta acima precisamos separar os dados em linguagens web e linguagens orientadas a objeto, após isto aplicamos a técnica bootstrap, como foi feito na primeira pergunta e desta forma é calculado o intervalo de confiança para a diferença da popularidade entre essas linguagens.
+
+```{r, echo=TRUE}
+linguagens_web <- dadosGithub %>% 
+  filter(file_extension == 'html' | file_extension == 'css' | file_extension == 'js')
+
+linguagens_oo <- dadosGithub %>% 
+  filter(file_extension == 'java' | file_extension == 'cpp' | file_extension == 'rb')
+
+median2 <- bootstrap2(data = (linguagens_web)$users, 
+               data2 = (linguagens_oo)$users,
+               median)
+
+median2_ci = CI.percentile(median2, probs = c(.025, .975))
+
+data.frame(median2_ci) %>% 
+  ggplot(aes(x = "Diferença de popularidade", ymin = X2.5., ymax = X97.5.)) + 
+  geom_errorbar(width = .2) + 
+  geom_hline(yintercept = 0, colour = "purple")
 
 
+```
 
+Através do gráfico acima podemos perceber que com 95% de confiança a diferença das medianas de popularidade entre os arquivos web (html, css, js) e os arquivos OO (java, cpp, rb) está no intervalo entre `r median2_ci`. Podemos concluir então que dentre esses arquivos filtrados, as linguagens Web foram mais utilizadas pelos usuários do que as linguagens orientadas a objeto, durante os anos de 2016 e 2017. Essa diferença de popularidade é relevante e tem essa significância de que com 95% de confiança se encontra no intervalo mencionado anteriormente.
+
+###Pergunta derivada
+
+**2.1) Existe uma diferença significativa na variação de popularidade entre os arquivos de extensão web (html, cs, js) e os arquivos de extensão de linguagens OO (java, cpp, rb)?**
+
+
+```{r, echo=TRUE, warning=FALSE}
+desvio_padrao2 <- bootstrap2(data = (linguagens_web)$users, 
+               data2 = (linguagens_oo)$users,
+               sd)
+
+desvio_padrao2_ci = CI.percentile(desvio_padrao2, probs = c(.025, .975))
+
+data.frame(desvio_padrao2_ci) %>% 
+  ggplot(aes(x = "Diferença", ymin = X2.5., ymax = X97.5.)) + 
+  geom_errorbar(width = .2) + 
+  geom_hline(yintercept = 0, colour = "purple")
+```
+
+Para sabermos se há uma diferença na variação de popularidade entre os arquivos mencionados na questão, precisamos utilizar a medida estatística desvio padrão. De acordo com o gráfico abaixo essa diferença está no intervalo entre `r desvio_padrao2_ci`. Desta forma podemos afirmar com 95% de confiança que existe sim uma diferença significativa na variação de popularidade entre essas linguagens e que ela se concentra nos valores mencionados no intervalo descrito anteriormente.
 
