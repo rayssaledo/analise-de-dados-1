@@ -25,7 +25,7 @@ Neste relatório vamos analisar uma amostra de dados da atividade global do gith
 
 #Descrição dos dados utilizados
 
-Para esta análise iremos utilizar as seguintes variáveis: *file_extension* que corresponde a extensão do arquivo manipulado pelo usuário, *month_day* o dia do mês, *the_month* o mês e *the_year* o ano em que o arquivo foi criado/modificado e *users* a quantidade de pessoas que editou os arquivos.
+Para esta análise iremos utilizar as seguintes variáveis: *file_extension* que corresponde a extensão do arquivo manipulado pelo usuário, *month_day* o dia do mês, *the_month* o mês, *the_year* o ano em que o arquivo foi criado/modificado e *users* a quantidade de pessoas que editou os arquivos.
 
 
 ```{r message = FALSE, echo=TRUE, warning=FALSE}
@@ -40,7 +40,7 @@ dadosGithub$date <- paste(dadosGithub$month_day, dadosGithub$the_month, dadosGit
 
 **1) Segunda e sexta têm popularidade maior que terça, quarta e quinta para a liguagem Java?** 
 
-Vamos tentar descobrir se os desenvolvedores que utilizam a linguagem *Java* são mais produtivos no meio da semana (terça, quarta e quinta) do que nos dias extremos da semana (segunda e sexta). Para isso iremos filtrar os dados com commits de arquivos Java e separá-los em meio da semana e extremos da semana. E logo depois iremos utilizar a técnica bootstrap para termos confiança na resposta que iremos encontrar, utilizaremos esta técnica para coletar informações da amostra de forma que possamos determinar um intervalo de confiança do valor da diferença da popularidade de Java no meio da semana e no meios dias extremos da semana.
+Vamos tentar descobrir se os desenvolvedores que utilizam a linguagem *Java* são mais produtivos no meio da semana (terça, quarta e quinta) do que nos dias extremos da semana (segunda e sexta). Para isso iremos filtrar os dados com commits de arquivos Java e separá-los em meio da semana e extremos da semana. E logo depois iremos utilizar a técnica bootstrap para termos confiança na resposta que iremos encontrar; utilizaremos esta técnica para coletar informações da amostra de forma que possamos determinar um intervalo de confiança do valor da diferença da popularidade de Java no meio da semana e nos dias extremos da semana.
 
 ```{r, echo=TRUE, warning=FALSE}
 java <- dadosGithub %>% 
@@ -52,7 +52,6 @@ extremos_semana <- java %>%
 
 meio_da_semana <- java %>% 
   filter(weekday == "terça-feira" | weekday == "quarta-feira" | weekday == "quinta-feira")
-
 
 median <- bootstrap2(data = (extremos_semana)$users, 
                data2 = (meio_da_semana)$users,
