@@ -1,5 +1,5 @@
 ---
-title: "Problema4-CP4"
+title: "Testes de Hipótese / Intervalos de Confiança"
 author: "Rayssa"
 date: "4 de agosto de 2017"
 output: html_document
@@ -16,6 +16,10 @@ library(resample)
 library(boot) 
 theme_set(theme_bw())
 ```
+
+# Aplicando Teste de Hipótese
+
+Iremos refazer a análise do checkpoint anterior utilizando *teste de hipótese*, para compararmos as respostas. A descrição das variáveis e a resposta encontrada através do intervalo de confiança no checkpoint anterior estão descritas logo abaixo.
 
 # Dados no github
 
@@ -34,7 +38,7 @@ dadosGithub$date <- paste(dadosGithub$month_day, dadosGithub$the_month, dadosGit
 ```
 
 
-##Pergunta utilizando intervalo de confiança
+##Respondendo através do intervalo de confiança
 
 **1) Segunda e sexta têm popularidade maior que terça, quarta e quinta para a linguagem Java?** 
 
@@ -46,10 +50,14 @@ java <- dadosGithub %>%
   mutate(weekday = weekdays(as.Date(date,'%d-%m-%Y')))
 
 extremos_semana <- java %>% 
-  filter(weekday == "segunda-feira" | weekday == "sexta-feira" )
+  filter(weekday == "segunda-feira" | weekday == "sexta-feira")
 
 meio_da_semana <- java %>% 
   filter(weekday == "terça-feira" | weekday == "quarta-feira" | weekday == "quinta-feira")
+
+java_semana <- java %>% 
+  filter(weekday != "sábado" , weekday != "domingo" )
+
 
 median <- bootstrap2(data = (extremos_semana)$users, 
                data2 = (meio_da_semana)$users,
@@ -66,15 +74,53 @@ data.frame(median_ci) %>%
 
 De acordo com o gráfico mostrado acima podemos verificar que com 95% de confiança a diferença das medianas de popularidade entre os dias extremos da semana e o meio da semana para a linguagem *Java* está no intervalo entre `r median_ci` . Assim percebemos que Java é uma liguagem que os usuários utilizam muito mais durante o meio da semana do que nas segundas e sextas. Desta forma podemos concluir que essa diferença é relevante e tem essa significância de que com 95% de confiança se encontra no intervalo mencionado anteriormente.
 
-##Teste de Hipótese
+##Respondendo através do Teste de Hipótese
 
-Guardar as diferenças observadas na amostra:
+Primeirramente vamos guardar as diferenças das medianas observadas na nossa amostra para a atividade dos programadores Java durante os extremos da semana e o meio da semana.
 
-```{r}
-median_extremo_semana <- extremos_semana %>% 
+```{r, warning=FALSE}
+mediana_extremo_semana <- extremos_semana %>% 
   summarise(mediana = median(users))
 
-median_extremo_semana
+mediana_meio_da_semana <- meio_da_semana %>%
+  summarise(mediana = median(users))
 
-diff.mediana.observada.extremos_semana = diff(median_extremo_semana$mediana)
+medianas <- data.frame(mediana2=c(mediana_extremo_semana$mediana ,mediana_meio_da_semana$mediana))
+diff.mediana.observada = diff(medianas$mediana)
+diff.mediana.observada
+
 ```
+
+A diferança encontrada para nossa amostra foi a seguinte *`r diff.mediana.observada`*.
+
+Agora vejamos o quão frequente seria encontrarmos uma diferença do tamanho que encontramos se não houvesse associação nenhuma entre qual é o dia da semana e qual é a quantidade de commits por dia para a linguagem Java. A situação onde não existe associação é a *hipótese nula*. Se a diferença que observamos em nossa amostra acontece facilmente na hipótese nula, isso significa que não temos evidência forte de associação: o que observamos acontece também quando não há associação. No caso onde a diferença que observamos é improvável na hipótese nula, então observamos algo que é indicativo de associação. 
+
+
+```{r, warning=FALSE}
+set.seed(1)
+glimpse(java_semana)
+diffs = replicate(10000, {
+  medianas = java_semana %>% 
+    mutate(id_embaralhado = sample(weekday, n())) %>% 
+    group_by(id_embaralhado) %>% 
+    summarise(mediana = median(users))
+  extremos_semana_java = medianas %>% 
+    filter(id_embaralhado == "segunda-feira" | id_embaralhado == "sexta-feira")
+  meio_da_semana_java = medianas %>% 
+    filter(id_embaralhado == "terça-feira" | id_embaralhado == "quarta-feira" | id_embaralhado == "quinta-feira")
+  return(extremos_semana_java$mediana - meio_da_semana_java$mediana)
+})
+# glimpse(diffs)
+# tibble(diferenca = diffs) %>% 
+#   ggplot(aes(x = diferenca)) + 
+#   geom_histogram(bins = 30) + 
+#   geom_vline(xintercept = diff.mediana.observada)
+
+# p-valor!
+p.valor = sum(abs(diffs) >= abs(diff.mediana.observada)) / length(diffs)
+p.valor
+```
+
+**O que significa o p-valor?**
+
+## Comparação do resultado com IC x Teste de Hipótese
