@@ -8,10 +8,9 @@ output: html_document
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = FALSE)
 library(ggplot2)
-library(plotly)
 library(GGally)
 library(dplyr)
-library(tidyverse)
+# library(tidyverse)
 library(resample)
 library(boot) 
 theme_set(theme_bw())
@@ -50,10 +49,10 @@ java <- dadosGithub %>%
   mutate(weekday = weekdays(as.Date(date,'%d-%m-%Y')))
 
 extremos_semana <- java %>% 
-  filter(weekday == "segunda-feira" | weekday == "sexta-feira")
+  filter(weekday == "segunda" | weekday == "sexta")
 
 meio_da_semana <- java %>% 
-  filter(weekday == "terça-feira" | weekday == "quarta-feira" | weekday == "quinta-feira")
+  filter(weekday == "terça" | weekday == "quarta" | weekday == "quinta")
 
 java_semana <- java %>% 
   filter(weekday != "sábado" , weekday != "domingo" )
@@ -105,16 +104,20 @@ diffs = replicate(10000, {
     group_by(id_embaralhado) %>% 
     summarise(mediana = median(users))
   extremos_semana_java = medianas %>% 
-    filter(id_embaralhado == "segunda-feira" | id_embaralhado == "sexta-feira")
+    filter(id_embaralhado == "segunda" | id_embaralhado == "sexta")
+  extremos_semana_java_mediana <- extremos_semana_java %>% 
+    summarise(med=median(mediana))
   meio_da_semana_java = medianas %>% 
-    filter(id_embaralhado == "terça-feira" | id_embaralhado == "quarta-feira" | id_embaralhado == "quinta-feira")
-  return(extremos_semana_java$mediana - meio_da_semana_java$mediana)
+    filter(id_embaralhado == "terça" | id_embaralhado == "quarta" | id_embaralhado == "quinta")
+   meio_da_semana_java_mediana <- meio_da_semana_java %>% 
+    summarise(med=median(mediana))
+  return(extremos_semana_java_mediana - meio_da_semana_java_mediana)
 })
-# glimpse(diffs)
-# tibble(diferenca = diffs) %>% 
-#   ggplot(aes(x = diferenca)) + 
-#   geom_histogram(bins = 30) + 
-#   geom_vline(xintercept = diff.mediana.observada)
+glimpse(diffs)
+tibble(diferenca = diffs) %>%
+  ggplot(aes(x = diferenca)) +
+  geom_histogram(bins = 30) +
+  geom_vline(xintercept = diff.mediana.observada)
 
 # p-valor!
 p.valor = sum(abs(diffs) >= abs(diff.mediana.observada)) / length(diffs)
