@@ -115,12 +115,12 @@ diffs = replicate(10000, {
 })
 glimpse(diffs)
 tibble(diferenca = diffs) %>%
-  ggplot(aes(x = diferenca)) +
-  geom_histogram(bins = 30) +
-  geom_vline(xintercept = diff.mediana.observada)
+ggplot(aes(unlist(diferenca))) +
+geom_histogram(bins= 30) +
+geom_vline(xintercept = diff.mediana.observada)
 
 # p-valor!
-p.valor = sum(abs(diffs) >= abs(diff.mediana.observada)) / length(diffs)
+p.valor = sum(abs(unlist(diffs)) >= abs(diff.mediana.observada)) / length(unlist(diffs))
 p.valor
 ```
 
