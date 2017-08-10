@@ -1,5 +1,5 @@
 ---
-title: "Testes de Hipótese / Intervalos de Confiança"
+title: "Testes de Hipótese x Intervalos de Confiança"
 author: "Rayssa"
 date: "4 de agosto de 2017"
 output: html_document
@@ -20,12 +20,12 @@ theme_set(theme_bw())
 
 Iremos refazer a análise do checkpoint anterior utilizando *teste de hipótese*, para compararmos as respostas. A descrição das variáveis e a resposta encontrada através do intervalo de confiança no checkpoint anterior estão descritas logo abaixo.
 
-# Dados no github
+##Dados no github
 
 Neste relatório vamos analisar uma amostra de dados da atividade global do github disponível neste link <https://raw.githubusercontent.com/nazareno/fpcc2/master/datasets/github-users-committing-filetypes.csv> durante 2016 e 2017, para respondermos algumas perguntas sobre liguagens de programação utilizadas pelos os usuários que fazem uso do github. 
 
 
-#Descrição dos dados utilizados
+##Descrição dos dados utilizados
 
 Para esta análise iremos utilizar as seguintes variáveis: *file_extension* que corresponde a extensão do arquivo manipulado pelo usuário, *month_day* o dia do mês, *the_month* o mês, *the_year* o ano em que o arquivo foi criado/modificado e *users* a quantidade de pessoas que editou os arquivos.
 
@@ -49,10 +49,10 @@ java <- dadosGithub %>%
   mutate(weekday = weekdays(as.Date(date,'%d-%m-%Y')))
 
 extremos_semana <- java %>% 
-  filter(weekday == "segunda" | weekday == "sexta")
+  filter(weekday == "segunda-feira" | weekday == "sexta-feira")
 
 meio_da_semana <- java %>% 
-  filter(weekday == "terça" | weekday == "quarta" | weekday == "quinta")
+  filter(weekday == "terça-feira" | weekday == "quarta-feira" | weekday == "quinta-feira")
 
 java_semana <- java %>% 
   filter(weekday != "sábado" , weekday != "domingo" )
@@ -75,9 +75,9 @@ De acordo com o gráfico mostrado acima podemos verificar que com 95% de confian
 
 ##Respondendo através do Teste de Hipótese
 
-Primeirramente vamos guardar as diferenças das medianas observadas na nossa amostra para a atividade dos programadores Java durante os extremos da semana e o meio da semana.
+Primeiramente vamos guardar as diferenças das medianas observadas na nossa amostra para a atividade dos programadores Java durante os extremos da semana e o meio da semana.
 
-```{r, warning=FALSE}
+```{r, echo=TRUE, warning=FALSE}
 mediana_extremo_semana <- extremos_semana %>% 
   summarise(mediana = median(users))
 
@@ -85,8 +85,7 @@ mediana_meio_da_semana <- meio_da_semana %>%
   summarise(mediana = median(users))
 
 medianas <- data.frame(mediana2=c(mediana_extremo_semana$mediana ,mediana_meio_da_semana$mediana))
-diff.mediana.observada = diff(medianas$mediana)
-diff.mediana.observada
+diff.mediana.observada = diff(medianas$mediana2)
 
 ```
 
@@ -95,7 +94,7 @@ A diferança encontrada para nossa amostra foi a seguinte *`r diff.mediana.obser
 Agora vejamos o quão frequente seria encontrarmos uma diferença do tamanho que encontramos se não houvesse associação nenhuma entre qual é o dia da semana e qual é a quantidade de commits por dia para a linguagem Java. A situação onde não existe associação é a *hipótese nula*. Se a diferença que observamos em nossa amostra acontece facilmente na hipótese nula, isso significa que não temos evidência forte de associação: o que observamos acontece também quando não há associação. No caso onde a diferença que observamos é improvável na hipótese nula, então observamos algo que é indicativo de associação. 
 
 
-```{r, warning=FALSE}
+```{r, echo=TRUE, warning=FALSE}
 set.seed(1)
 glimpse(java_semana)
 diffs = replicate(10000, {
@@ -104,26 +103,34 @@ diffs = replicate(10000, {
     group_by(id_embaralhado) %>% 
     summarise(mediana = median(users))
   extremos_semana_java = medianas %>% 
-    filter(id_embaralhado == "segunda" | id_embaralhado == "sexta")
+    filter(id_embaralhado == "segunda-feira" | id_embaralhado == "sexta-feira")
   extremos_semana_java_mediana <- extremos_semana_java %>% 
     summarise(med=median(mediana))
   meio_da_semana_java = medianas %>% 
-    filter(id_embaralhado == "terça" | id_embaralhado == "quarta" | id_embaralhado == "quinta")
+    filter(id_embaralhado == "terça-feira" | id_embaralhado == "quarta-feira" | id_embaralhado == "quinta-feira")
    meio_da_semana_java_mediana <- meio_da_semana_java %>% 
     summarise(med=median(mediana))
   return(extremos_semana_java_mediana - meio_da_semana_java_mediana)
 })
-glimpse(diffs)
+glimpse(unlist(diffs))
 tibble(diferenca = diffs) %>%
-ggplot(aes(unlist(diferenca))) +
-geom_histogram(bins= 30) +
-geom_vline(xintercept = diff.mediana.observada)
+  ggplot(aes(x=unlist(diferenca))) +
+  geom_histogram(bins= 30) +
+  geom_vline(xintercept = diff.mediana.observada)
 
 # p-valor!
 p.valor = sum(abs(unlist(diffs)) >= abs(diff.mediana.observada)) / length(unlist(diffs))
 p.valor
+
 ```
 
-**O que significa o p-valor?**
+
+Observando os valores das diferenças mostradas acima e considerando nossa hipótese nula como verdadeira, temos aproximadamente 0,0001% (p-valor = `r p.valor`) das diferenças com valor igual ou superior ao valor da diferença encontrada na nossa amostra, que foi `r diff.mediana.observada`. Como o p-valor encontrado foi muito pequeno, é possível negar a hipótese nula e desta forma concluir que existe uma associação entre os dias da semana e a popularidade da linguagem Java, e que a popularidade foi maior durante os dias do meio da semana (terça, quarta e quinta) do que durante os dias extremos da semana (segunda e sexta), portanto a diferença da nossa amostra é estatisticamente significativa.
+
+## O que significa o p-valor?
+
+O p-valor é definido como a probabilidade de se observar um valor da estatística de teste maior ou igual ao encontrado. Geralmente, o valor de corte para rejeitar a hipótese nula é de 0,05, o que significa que, quando não há nenhuma diferença, um valor tão extremo para a estatística de teste é esperado em menos de 5% das vezes. Desta forma podemos dizer que o p-valor encontrado acima corresponde a probabilidade que mede quantos dos valores encontrados são maiores ou iguais ao valor observado na nossa amostra, quando a hipótese nula é verdadeira. 
 
 ## Comparação do resultado com IC x Teste de Hipótese
+
+De acordo com as duas respostas, utilizando intervalo de confiança (IC) e teste de hipótese, podemos perceber que ambas chegam no mesmo resultado. A única diferença entre elas é que ao utilizarmos IC conseguimos saber da relevância que os resultados possuem e podemos controlar a significância dos mesmos.
