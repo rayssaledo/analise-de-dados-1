@@ -1,0 +1,54 @@
+---
+title: "Usando Regressão"
+author: "Rayssa"
+date: "15 de agosto de 2017"
+output: html_document
+---
+
+
+```{r}
+suppressWarnings(library(tidyverse))
+
+library(tidyverse)
+theme_set(theme_bw())
+library(GGally)
+library(ggfortify)
+library(broom)
+require(ISLR)
+library(modelr) # devtools::install_github("hadley/modelr")
+
+```
+
+
+```{r}
+advertising = read_csv("../dados/speed-dating.csv") 
+advertising %>% 
+  filter(like != 'NA', sinc != 'NA') %>% 
+  select(like, sinc) %>% 
+  ggpairs(lower = list(continuous = wrap("points", alpha = 0.3)))
+```
+
+
+```{r}
+sinc.model = lm(like ~ sinc, data = advertising)
+
+adv_augmented = advertising %>% 
+  add_predictions(sinc.model) %>% 
+  add_residuals(sinc.model)
+# 
+# # Modelo x dados
+# adv_augmented %>% 
+#   ggplot(aes(x = )) + 
+#   geom_line(aes(y = pred), size = 2, colour = "blue") + 
+#   geom_point(aes(y = Sales))
+# 
+# # Resíduos x dados
+# adv_augmented %>% 
+#   ggplot(aes(x = TV)) + 
+#   geom_point(aes(y = resid), size = 2) +
+#   geom_ref_line(h = 0, colour = "grey80")
+# 
+# tidy(tv.model, conf.int = TRUE)
+# glance(tv.model, conf.int = TRUE)
+
+```
