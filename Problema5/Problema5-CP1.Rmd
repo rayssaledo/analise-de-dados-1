@@ -5,7 +5,6 @@ date: "15 de agosto de 2017"
 output: html_document
 ---
 
-
 ```{r}
 suppressWarnings(library(tidyverse))
 
@@ -19,36 +18,127 @@ library(modelr) # devtools::install_github("hadley/modelr")
 
 ```
 
+##Dados
+
+Os dados descrevem 5000 encontros relâmpagos (speed dating) de 4 minutos envolvendo 310 jovens americanos. Os dados originais foram coletados por professores da Columbia Business School.
+
+Os participantes tinham vários encontros de 4 minutos por noite. Após cada um, preenchiam fichas avaliando aqueles com quem se encontraram. Cada linha nos dados representa um desses encontros.
+
+Iremos utilizar as seguintes variáveis:
+*gender : sexo da pessoa que avalia, 0 = mulher, 1 = homem
+*attr : quão atraente p1 achou p2
+*sinc : quão sincero p1 achou p2
+*like : no geral, quanto p1 gostou de p2?
+
+Neste post iremos analisar a avaliação das mulheres e dos homens de acordo com as características **sinceridade** e **atraente**.
 
 ```{r}
 advertising = read_csv("../dados/speed-dating.csv") 
-advertising %>% 
-  filter(like != 'NA', sinc != 'NA') %>% 
-  select(like, sinc) %>% 
+# advertising %>% 
+#   filter(like != 'NA', sinc != 'NA', attr != 'NA') %>% 
+#   select(like, sinc, attr) %>% 
+#   ggpairs(lower = list(continuous = wrap("points", alpha = 0.3)))
+```
+
+# Homens avaliando as mulheres
+
+Inicialmente iremos filtrar os dados com pessoas de gênero masculino, para que assim possamos saber como os homens avaliaram as mulheres a apartir das características *sinceridade* e *atraente* 
+
+
+```{r message=FALSE, warning=FALSE}
+homens = advertising %>% 
+  filter(gender == 1, like != 'NA', sinc != 'NA', attr != 'NA')
+
+homens %>% 
+  select(sinc, attr, like) %>% 
   ggpairs(lower = list(continuous = wrap("points", alpha = 0.3)))
+```
+
+```{r}
+sinc.model.homens = lm(like ~ sinc, data = homens)
+
+adv_augmented = homens %>% 
+  add_predictions(sinc.model.homens) %>% 
+  add_residuals(sinc.model.homens)
+
+# Modelo x dados
+adv_augmented %>% 
+  ggplot(aes(x = sinc)) + 
+  geom_line(aes(y = pred), size = 2, colour = "blue") + 
+  geom_point(aes(y = like))
+
+# Resíduos x dados
+adv_augmented %>% 
+  ggplot(aes(x = sinc)) + 
+  geom_point(aes(y = resid), size = 2) +
+  geom_ref_line(h = 0, colour = "grey")
 ```
 
 
 ```{r}
-sinc.model = lm(like ~ sinc, data = advertising)
+homens.model = lm(like ~ sinc + attr, data = homens)
 
-adv_augmented = advertising %>% 
-  add_predictions(sinc.model) %>% 
-  add_residuals(sinc.model)
-# 
-# # Modelo x dados
-# adv_augmented %>% 
-#   ggplot(aes(x = )) + 
-#   geom_line(aes(y = pred), size = 2, colour = "blue") + 
-#   geom_point(aes(y = Sales))
-# 
-# # Resíduos x dados
-# adv_augmented %>% 
-#   ggplot(aes(x = TV)) + 
-#   geom_point(aes(y = resid), size = 2) +
-#   geom_ref_line(h = 0, colour = "grey80")
-# 
-# tidy(tv.model, conf.int = TRUE)
-# glance(tv.model, conf.int = TRUE)
+plot_model_homens = homens %>% 
+  data_grid(sinc = seq_range(sinc, 10), # Crie um vetor de 10 valores no range de intel
+            attr = seq_range(attr, 4)) %>%  # Vetor de 4 valores no range de fun 
+  add_predictions(homens.model)
 
+glimpse(plot_model_homens)
+plot_model_homens %>% 
+  ggplot(aes(x = sinc, y = pred)) + 
+  geom_line(aes(group = attr, colour = attr))
+```
+
+```{r message=FALSE, warning=FALSE}
+tidy(homens.model, conf.int = TRUE) %>% 
+  select(-std.error, -p.value)
+```
+##Grupo mulheres
+
+```{r message=FALSE, warning=FALSE}
+mulheres = advertising %>% 
+  filter(gender == 0, like != 'NA', sinc != 'NA', attr != 'NA')
+
+mulheres %>% 
+  select(sinc, attr, like) %>% 
+  ggpairs(lower = list(continuous = wrap("points", alpha = 0.3)))
+```
+
+```{r}
+attr.model.mulheres = lm(like ~ attr, data = mulheres)
+
+adv_augmented = mulheres %>% 
+  add_predictions(attr.model.mulheres) %>% 
+  add_residuals(attr.model.mulheres)
+
+# Modelo x dados
+adv_augmented %>% 
+  ggplot(aes(x = attr)) + 
+  geom_line(aes(y = pred), size = 2, colour = "pink") + 
+  geom_point(aes(y = like))
+
+# Resíduos x dados
+adv_augmented %>% 
+  ggplot(aes(x = attr)) + 
+  geom_point(aes(y = resid), size = 2) +
+  geom_ref_line(h = 0, colour = "grey")
+```
+
+```{r}
+mulheres.model = lm(like ~ sinc + attr, data = mulheres)
+
+plot_model_mulheres = mulheres %>% 
+  data_grid(sinc = seq_range(sinc, 10), # Crie um vetor de 10 valores no range de intel
+            attr = seq_range(attr, 4)) %>%  # Vetor de 4 valores no range de fun 
+  add_predictions(mulheres.model)
+
+glimpse(plot_model_mulheres)
+plot_model_mulheres %>% 
+  ggplot(aes(x = sinc, y = pred)) + 
+  geom_line(aes(group = attr, colour = attr))
+```
+
+```{r message=FALSE, warning=FALSE}
+tidy(mulheres.model, conf.int = TRUE) %>% 
+  select(-std.error, -p.value)
 ```
