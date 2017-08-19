@@ -5,7 +5,7 @@ date: "15 de agosto de 2017"
 output: html_document
 ---
 
-```{r}
+```{r, echo=FALSE, message=FALSE, warning=FALSE}
 suppressWarnings(library(tidyverse))
 
 library(tidyverse)
@@ -20,32 +20,30 @@ library(modelr) # devtools::install_github("hadley/modelr")
 
 ##Dados
 
-Os dados descrevem 5000 encontros relâmpagos (speed dating) de 4 minutos envolvendo 310 jovens americanos. Os dados originais foram coletados por professores da Columbia Business School.
+Os dados que iremos utilizar neste post estão disponíveis neste link <https://github.com/nazareno/ciencia-de-dados-1/tree/master/5-regressao/speed-dating> e descrevem 5000 encontros relâmpagos (speed dating) de 4 minutos envolvendo 310 jovens americanos. Os dados originais foram coletados por professores da Columbia Business School.
 
 Os participantes tinham vários encontros de 4 minutos por noite. Após cada um, preenchiam fichas avaliando aqueles com quem se encontraram. Cada linha nos dados representa um desses encontros.
 
-Iremos utilizar as seguintes variáveis:
-*gender : sexo da pessoa que avalia, 0 = mulher, 1 = homem
-*attr : quão atraente p1 achou p2
-*sinc : quão sincero p1 achou p2
-*like : no geral, quanto p1 gostou de p2?
+Para esta análise utilizaremos as seguintes variáveis:<br/>
+  *gender : sexo da pessoa que avalia (0 = mulher, 1 = homem) <br/>
+  *attr(atração) : é o quão atraente p1 achou p2 <br/>
+  *sinc(sinceridade) : é o quão sincero p1 achou p2 <br/>
+  *like : no geral, quanto p1 gostou de p2? <br/>
 
-Neste post iremos analisar a avaliação das mulheres e dos homens de acordo com as características **sinceridade** e **atraente**.
+Neste post iremos analisar a avaliação das mulheres e dos homens em relação aos seus encontros, de acordo com as características **sinceridade** e **atração**; buscando responder a seguinte pergunta: **Qual característica (sinceridade ou atração) tem maior relação com o fato da pessoa, no geral, gostar da outra depois do encontro speed dating?** <br/>
 
-```{r}
+Vamos responder esta pergunta na visão dos homens e das mulheres. Para isso devemos separar os dados em dois grupos *mulheres* e *homens*. Primeiro iremos verificar as avaliações dos homens e logo após as das mulheres.
+
+```{r, message=FALSE, warning=FALSE}
 advertising = read_csv("../dados/speed-dating.csv") 
-# advertising %>% 
-#   filter(like != 'NA', sinc != 'NA', attr != 'NA') %>% 
-#   select(like, sinc, attr) %>% 
-#   ggpairs(lower = list(continuous = wrap("points", alpha = 0.3)))
 ```
 
-# Homens avaliando as mulheres
+# Homens avaliando seus encontros
 
-Inicialmente iremos filtrar os dados com pessoas de gênero masculino, para que assim possamos saber como os homens avaliaram as mulheres a apartir das características *sinceridade* e *atraente* 
+Inicialmente iremos filtrar os dados com pessoas de gênero masculino, para que assim possamos saber como os homens avaliaram seus encontros apartir das características *sinceridade* e *atração* após seus encontros no *speed dating*.
 
 
-```{r message=FALSE, warning=FALSE}
+```{r , warning=FALSE}
 homens = advertising %>% 
   filter(gender == 1, like != 'NA', sinc != 'NA', attr != 'NA')
 
@@ -54,34 +52,19 @@ homens %>%
   ggpairs(lower = list(continuous = wrap("points", alpha = 0.3)))
 ```
 
-```{r}
-sinc.model.homens = lm(like ~ sinc, data = homens)
+Podemos perceber através do gráfico acima que existe uma correlação positiva para as duas características, para a característica sinceridade (0.493) e para atração (0.658), com o fato dos homens gostarem da outra pessoa após o encontro. 
 
-adv_augmented = homens %>% 
-  add_predictions(sinc.model.homens) %>% 
-  add_residuals(sinc.model.homens)
+##Primeiro modelo (Homens)
 
-# Modelo x dados
-adv_augmented %>% 
-  ggplot(aes(x = sinc)) + 
-  geom_line(aes(y = pred), size = 2, colour = "blue") + 
-  geom_point(aes(y = like))
-
-# Resíduos x dados
-adv_augmented %>% 
-  ggplot(aes(x = sinc)) + 
-  geom_point(aes(y = resid), size = 2) +
-  geom_ref_line(h = 0, colour = "grey")
-```
-
+Para começar a análise consideraremos os dois preditores (sinc e attr) no nosso modelo, como mostra o gráfico abaixo.
 
 ```{r}
-homens.model = lm(like ~ sinc + attr, data = homens)
+homens_model = lm(like ~ sinc + attr, data = homens)
 
 plot_model_homens = homens %>% 
-  data_grid(sinc = seq_range(sinc, 10), # Crie um vetor de 10 valores no range de intel
-            attr = seq_range(attr, 4)) %>%  # Vetor de 4 valores no range de fun 
-  add_predictions(homens.model)
+  data_grid(sinc = seq_range(sinc, 10), # Cria um vetor de 10 valores no range de sinc
+            attr = seq_range(attr, 4)) %>%  # Vetor de 4 valores no range de attr 
+  add_predictions(homens_model)
 
 glimpse(plot_model_homens)
 plot_model_homens %>% 
@@ -89,11 +72,44 @@ plot_model_homens %>%
   geom_line(aes(group = attr, colour = attr))
 ```
 
+Vamos analisar os resíduos para cada preditor do modelo:
+
+```{r, warning=FALSE}
+adv_augmented = homens %>% 
+  add_predictions(homens_model) %>% 
+  add_residuals(homens_model)
+
+#Resíduos (sinceridade)
+adv_augmented %>% 
+  ggplot(aes(x = sinc)) + 
+  geom_count(aes(y = resid))
+
+#Resíduos (atração)
+adv_augmented %>% 
+  ggplot(aes(x = attr)) + 
+  geom_count(aes(y = resid))
+```
+
+Pelos gráficos mostrados acima podemos perceber que não há nada alarmante em termos de valores extremos, sem relações obviamente não-lineares e nem heteroscedasticidade, portanto vamos analisar os coeficientes e o modelo.
+
 ```{r message=FALSE, warning=FALSE}
-tidy(homens.model, conf.int = TRUE) %>% 
+tidy(homens_model, conf.int = TRUE) %>% 
   select(-std.error, -p.value)
 ```
-##Grupo mulheres
+
+Através dos coeficientes encontrados para o modelo da avaliação dos homens em relação a seus encontros, podemos afirmar a partir dos intervalos de confiança, que as características sinceridade e atração são significativas. Também podemos perceber que a característica atração(attr) é quase o dobro mais relevante que a característica sinceridade(sinc), em relação aos homens gostarem de outra pessoa.
+
+```{r}
+glance(homens_model, conf.int = TRUE)
+```
+
+Pelos dados acima ficamos cientes que nosso modelo explica aproximadamente 48% da variação dos dados. Portanto, podemos considerar que a variável dependente *like* pode ser bem explicada pelas duas características, sinceridade e atração.
+
+
+# Mulheres avaliando seus encontros
+
+Semelhante ao que fizemos anteriormente, iremos filtrar os dados com pessoas de gênero feminino, para que assim possamos saber como as mulheres avaliaram seus encontros apartir das características *sinceridade* e *atração* após seus encontros no *speed dating*.
+
 
 ```{r message=FALSE, warning=FALSE}
 mulheres = advertising %>% 
@@ -104,33 +120,19 @@ mulheres %>%
   ggpairs(lower = list(continuous = wrap("points", alpha = 0.3)))
 ```
 
-```{r}
-attr.model.mulheres = lm(like ~ attr, data = mulheres)
+Podemos perceber através do gráfico acima que existe uma correlação positiva para as duas características, para a característica sinceridade (0.545) e para atração (0.681), com o fato das mulheres gostarem da outra pessoa após o encontro. 
 
-adv_augmented = mulheres %>% 
-  add_predictions(attr.model.mulheres) %>% 
-  add_residuals(attr.model.mulheres)
+## Segundo modelo (Mulheres)
 
-# Modelo x dados
-adv_augmented %>% 
-  ggplot(aes(x = attr)) + 
-  geom_line(aes(y = pred), size = 2, colour = "pink") + 
-  geom_point(aes(y = like))
-
-# Resíduos x dados
-adv_augmented %>% 
-  ggplot(aes(x = attr)) + 
-  geom_point(aes(y = resid), size = 2) +
-  geom_ref_line(h = 0, colour = "grey")
-```
+Para começar a análise consideraremos os dois preditores (sinc e attr) no nosso modelo, como mostra o gráfico abaixo.
 
 ```{r}
-mulheres.model = lm(like ~ sinc + attr, data = mulheres)
+mulheres_model = lm(like ~ sinc + attr, data = mulheres)
 
 plot_model_mulheres = mulheres %>% 
-  data_grid(sinc = seq_range(sinc, 10), # Crie um vetor de 10 valores no range de intel
-            attr = seq_range(attr, 4)) %>%  # Vetor de 4 valores no range de fun 
-  add_predictions(mulheres.model)
+  data_grid(sinc = seq_range(sinc, 10), # Crie um vetor de 10 valores no range de sinc
+            attr = seq_range(attr, 4)) %>%  # Vetor de 4 valores no range de attr 
+  add_predictions(mulheres_model)
 
 glimpse(plot_model_mulheres)
 plot_model_mulheres %>% 
@@ -138,7 +140,40 @@ plot_model_mulheres %>%
   geom_line(aes(group = attr, colour = attr))
 ```
 
+Vamos analisar os resíduos para cada preditor do modelo:
+
+```{r, warning=FALSE}
+adv_augmented = mulheres %>% 
+  add_predictions(mulheres_model) %>% 
+  add_residuals(mulheres_model)
+
+#Resíduos (sinceridade)
+adv_augmented %>% 
+  ggplot(aes(x = sinc)) + 
+  geom_count(aes(y = resid))
+
+#Resíduos (atração)
+adv_augmented %>% 
+  ggplot(aes(x = attr)) + 
+  geom_count(aes(y = resid))
+```
+
+Pelos gráficos mostrados acima podemos perceber que não há nada alarmante em termos de valores extremos, sem relações obviamente não-lineares e nem heteroscedasticidade, portanto vamos analisar os coeficientes e o modelo.
+
 ```{r message=FALSE, warning=FALSE}
-tidy(mulheres.model, conf.int = TRUE) %>% 
+tidy(mulheres_model, conf.int = TRUE) %>% 
   select(-std.error, -p.value)
 ```
+
+Através dos coeficientes encontrados para o modelo da avaliação das mulheres em relação a seus encontros, podemos afirmar a partir dos intervalos de confiança, que as características sinceridade e atração são significativas. Também podemos perceber que a característica atração(attr) é mais relevante que a característica sinceridade(sinc), em relação as mulheres gostarem de outra pessoa.
+
+```{r}
+glance(mulheres_model, conf.int = TRUE)
+```
+
+Pelos dados acima ficamos cientes que nosso modelo explica aproximadamente 54% da variação dos dados, neste caso o modelo explicou melhor que o modelo da avaliação dos homens. Portanto, podemos considerar que a variável dependente *like* pode ser bem explicada pelas duas características, sinceridade e atração.
+
+
+#Visão geral dos resultados apresentados
+
+Podemos ver resultados semelhantes nos dois modelos e verificar que tanto os homens quanto as mulheres após esse encontro *speed dating* acham que a característica atração tem maior relação com o fato da pessoa, no geral, gostar da outra. Por isso, aqueles que se consideram atraentes se dão bem nesses encontros :)
