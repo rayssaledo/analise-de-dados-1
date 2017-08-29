@@ -36,23 +36,27 @@ Vamos procurar responder essas duas perguntas:
 
 **1. Dentre os fatores que você acha que podem ter efeito no match, quais fatores têm efeito significativo na chance de p1 decidir se encontrar novamente com p2? E como é esse efeito (positivo/negativo)?**
 
-Para responder esta pergunta irei considerar os dois fatores que utilizei no checkpoint anterior, a *atração* e a *sinceridade*.
+Para responder esta pergunta irei considerar os fatores **atração**, **sinceridade**, **ambição**, **divertido** :)
 
 ```{r}
 speed_dating = speed_dating %>% 
   mutate(dec = as.factor(dec))
 
-model = glm(dec ~ attr + sinc, 
+model = glm(dec ~ attr + sinc + amb + fun, 
                   data = speed_dating, 
                   family = "binomial")
+tidy(model, conf.int = TRUE) %>% 
+  select(-p.value)
 tidy(model, conf.int = TRUE, exponentiate = TRUE) %>% 
   select(-p.value)
-glance(model)
 pR2(model)
 ```
 
-Como podemos ver no modelo acima, os dois fatores são significativos, pois os seus intervalos de confiança não incluem o valor zero. E como os valores da estimativa dos dois fatores são maiores que o valor um, podemos afirmar que eles têm um efeito positivo, ou seja, ser atraente e sincero é um dos fatores que ajuda a p1 decidir se encontrar novamente com p2.
+Como podemos ver no modelo acima, todos os fatores são significativos, pois os seus intervalos de confiança não incluem o valor zero. Também podemos afirmar que os fatores *atração* e *diversão* possuem um efeito positivo no match, enquanto os fatores *sinceridade* e *ambição* têm efeito negativo. Resumindo, se p1 achar p2 atraente ou divertida aumenta a chance de p1 se encontrar novamente com p2. Caso p1 ache p2 ambiciosa ou sincera a chance de p1 se encontrar novamente com p2 diminui.
 
-Para vermos o quanto nosso modelo explica a variação dos dados, precisamos calcular o r quadrado. Pelos dados acima ficamos cientes que nosso modelo explica aproximadamente 23% da variação dos dados. Portanto, a variável dependente *dec* não pode ser bem explicada pelas duas características, sinceridade e atração, ou seja, existem outros fatores além da sinceridade e atração que influenciam p1 querer se encontrar novamente com p2.
+Para vermos o quanto nosso modelo explica a variação dos dados, precisamos calcular o r quadrado. Pelos dados acima ficamos cientes que nosso modelo explica aproximadamente 30% da variação dos dados. Portanto, a variável dependente *dec* não pode ser bem explicada por essas características, ou seja, existem outros fatores além da sinceridade, atração, ambição e diversão que influenciam p1 querer se encontrar novamente com p2.
 
 **2. Que fatores nos dados têm mais efeito na chance de um participante querer se encontrar novamente com outro?**
+
+Considerando os fatores que tem efeito positivo para que p1 decida se encontrar novamente com p2. Podemos perceber que o fator que tem mais efeito na decisão de p1 querer se encontrar novamente com p2, é quando p2 é considerado atraente por p1. O efeito deste fator é quase duas vezes maior que o efeito de ser divertido.
+

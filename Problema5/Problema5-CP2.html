@@ -133,30 +133,38 @@ $(document).ready(function () {
 <div id="perguntas" class="section level1">
 <h1>Perguntas</h1>
 <p><strong>1. Dentre os fatores que você acha que podem ter efeito no match, quais fatores têm efeito significativo na chance de p1 decidir se encontrar novamente com p2? E como é esse efeito (positivo/negativo)?</strong></p>
-<p>Para responder esta pergunta irei considerar os dois fatores que utilizei no checkpoint anterior, a <em>atração</em> e a <em>sinceridade</em>.</p>
+<p>Para responder esta pergunta irei considerar os fatores <strong>atração</strong>, <strong>sinceridade</strong>, <strong>ambição</strong>, <strong>divertido</strong> :)</p>
 <pre class="r"><code>speed_dating = speed_dating %&gt;% 
-  mutate(dec = as.factor(dec))</code></pre>
-<pre><code>## Warning: package 'bindrcpp' was built under R version 3.4.1</code></pre>
-<pre class="r"><code>model = glm(dec ~ attr + sinc, 
+  mutate(dec = as.factor(dec))
+
+model = glm(dec ~ attr + sinc + amb + fun, 
                   data = speed_dating, 
                   family = &quot;binomial&quot;)
-tidy(model, conf.int = TRUE, exponentiate = TRUE) %&gt;% 
+tidy(model, conf.int = TRUE) %&gt;% 
+  select(-p.value)</code></pre>
+<pre><code>##          term    estimate  std.error  statistic   conf.low   conf.high
+## 1 (Intercept) -4.94865221 0.21429887 -23.092292 -5.3742135 -4.53402360
+## 2        attr  0.57451386 0.02634812  21.804737  0.5234174  0.62672386
+## 3        sinc -0.07762619 0.02592238  -2.994562 -0.1285614 -0.02691769
+## 4         amb -0.11534626 0.02535964  -4.548420 -0.1652605 -0.06582774
+## 5         fun  0.36530907 0.02684400  13.608594  0.3130807  0.41833540</code></pre>
+<pre class="r"><code>tidy(model, conf.int = TRUE, exponentiate = TRUE) %&gt;% 
   select(-p.value)</code></pre>
 <pre><code>##          term    estimate  std.error  statistic    conf.low  conf.high
-## 1 (Intercept) 0.009016551 0.18917297 -24.890941 0.006193237 0.01300268
-## 2        attr 1.958833319 0.02434442  27.618199 1.868663181 2.05581329
-## 3        sinc 1.028969745 0.02190410   1.303777 0.985724331 1.07412698</code></pre>
-<pre class="r"><code>glance(model)</code></pre>
-<pre><code>##   null.deviance df.null    logLik      AIC      BIC deviance df.residual
-## 1      6479.481    4750 -2596.204 5198.409 5217.807 5192.409        4748</code></pre>
+## 1 (Intercept) 0.007092962 0.21429887 -23.092292 0.004634562 0.01073739
+## 2        attr 1.776266796 0.02634812  21.804737 1.687785650 1.87146932
+## 3        sinc 0.925310250 0.02592238  -2.994562 0.879359595 0.97344136
+## 4         amb 0.891057551 0.02535964  -4.548420 0.847672858 0.93629214
+## 5         fun 1.440959295 0.02684400  13.608594 1.367631934 1.51943021</code></pre>
 <pre class="r"><code>pR2(model)</code></pre>
 <pre><code>##           llh       llhNull            G2      McFadden          r2ML 
-## -2596.2043839 -3338.8632511  1485.3177345     0.2224287     0.2684814 
+## -2341.5411431 -3338.8632511  1994.6442160     0.2987011     0.3606029 
 ##          r2CU 
-##     0.3557149</code></pre>
-<p>Como podemos ver no modelo acima, os dois fatores são significativos, pois os seus intervalos de confiança não incluem o valor zero. E como os valores da estimativa dos dois fatores são maiores que o valor um, podemos afirmar que eles têm um efeito positivo, ou seja, ser atraente e sincero é um dos fatores que ajuda a p1 decidir se encontrar novamente com p2.</p>
-<p>Para vermos o quanto nosso modelo explica a variação dos dados, precisamos calcular o r quadrado. Pelos dados acima ficamos cientes que nosso modelo explica aproximadamente 23% da variação dos dados. Portanto, a variável dependente <em>dec</em> não pode ser bem explicada pelas duas características, sinceridade e atração, ou seja, existem outros fatores além da sinceridade e atração que influenciam p1 querer se encontrar novamente com p2.</p>
+##     0.4645419</code></pre>
+<p>Como podemos ver no modelo acima, todos os fatores são significativos, pois os seus intervalos de confiança não incluem o valor zero. Também podemos afirmar que os fatores <em>atração</em> e <em>diversão</em> possuem um efeito positivo no match, enquanto os fatores <em>sinceridade</em> e <em>ambição</em> têm efeito negativo. Resumindo, se p1 achar p2 atraente ou divertida aumenta a chance de p1 se encontrar novamente com p2. Caso p1 ache p2 ambiciosa ou sincera a chance de p1 se encontrar novamente com p2 diminui.</p>
+<p>Para vermos o quanto nosso modelo explica a variação dos dados, precisamos calcular o r quadrado. Pelos dados acima ficamos cientes que nosso modelo explica aproximadamente 30% da variação dos dados. Portanto, a variável dependente <em>dec</em> não pode ser bem explicada por essas características, ou seja, existem outros fatores além da sinceridade, atração, ambição e diversão que influenciam p1 querer se encontrar novamente com p2.</p>
 <p><strong>2. Que fatores nos dados têm mais efeito na chance de um participante querer se encontrar novamente com outro?</strong></p>
+<p>Considerando os fatores que tem efeito positivo para que p1 decida se encontrar novamente com p2. Podemos perceber que o fator que tem mais efeito na decisão de p1 querer se encontrar novamente com p2, é quando p2 é considerado atraente por p1. O efeito deste fator é quase duas vezes maior que o efeito de ser divertido.</p>
 </div>
 
 
